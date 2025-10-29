@@ -156,12 +156,13 @@ object ForecastAnalyzer {
             )
         }
 
-        val riskScore = risks.sumOf { insight ->
-            when (insight.severity) {
+        val riskScore = risks.fold(initial = 0) { acc, insight ->
+            val score = when (insight.severity) {
                 InsightSeverity.POSITIVE -> 0
                 InsightSeverity.WARNING -> 1
                 InsightSeverity.CRITICAL -> 2
             }
+            acc + score
         }
 
         val headline = when {
