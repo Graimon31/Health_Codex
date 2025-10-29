@@ -4,7 +4,6 @@ package com.example.healthcodex
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -22,12 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcodex.feature.forecast.ForecastRoute
 import com.example.healthcodex.R
 import com.example.healthcodex.ui.ProfileNavItem
+import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
 
@@ -107,16 +106,8 @@ private fun AppScaffold() {
                     onFillProfile = { navController.navigate(com.example.healthcodex.ui.profile.ProfileNav.edit) }
                 )
             }
-            composablePlaceholder("measurements")
+            measurementsNavGraph(navController, innerPadding)
             ProfileNavGraph(navController, innerPadding)
-        }
-    }
-}
-
-private fun androidx.navigation.NavGraphBuilder.composablePlaceholder(route: String) {
-    composable(route) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Text(text = "Раздел $route в разработке")
         }
     }
 }
