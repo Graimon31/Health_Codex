@@ -1,0 +1,112 @@
+// app/src/main/java/com/example/healthcodex/MainActivity.kt
+package com.example.healthcodex
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.healthcodex.ui.ProfileNavItem
+import com.example.healthcodex.ui.profile.ProfileNavGraph
+import com.example.healthcodex.ui.theme.HealthCodexTheme
+
+/**
+ * Main activity that hosts the application navigation graph.
+ */
+class MainActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            HealthCodexTheme {
+                AppScaffold()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppScaffold() {
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val items = listOf(
+        ProfileNavItem(
+            route = "home",
+            label = "Главная",
+            icon = Icons.Default.Home
+        ),
+        ProfileNavItem(
+            route = "measurements",
+            label = "Измерения",
+            icon = Icons.Default.Favorite
+        ),
+        ProfileNavItem(
+            route = com.example.healthcodex.ui.profile.ProfileNav.view,
+            label = "Профиль",
+            icon = Icons.Default.Person
+        )
+    )
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                items.forEach { item ->
+                    NavigationBarItem(
+                        selected = currentRoute == item.route,
+                        onClick = {
+                            if (currentRoute != item.route) {
+                                navController.navigate(item.route) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                }
+                            }
+                        },
+                        icon = { Icon(item.icon, contentDescription = item.label) },
+                        label = { Text(item.label) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            composablePlaceholder("home")
+            composablePlaceholder("measurements")
+            ProfileNavGraph(navController, innerPadding)
+        }
+    }
+}
+
+private fun androidx.navigation.NavGraphBuilder.composablePlaceholder(route: String) {
+    androidx.navigation.compose.composable(route) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Text(text = "Раздел $route в разработке")
+        }
+    }
+}
