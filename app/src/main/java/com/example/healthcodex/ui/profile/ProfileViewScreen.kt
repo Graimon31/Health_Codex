@@ -24,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,6 +50,7 @@ import androidx.navigation.NavController
 import com.example.healthcodex.feature.profile.ProfileExportImport
 import com.example.healthcodex.util.Formatters
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues) {
     val context = LocalContext.current
