@@ -20,10 +20,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.healthcodex.feature.forecast.ForecastRoute
+import com.example.healthcodex.R
 import com.example.healthcodex.ui.ProfileNavItem
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
@@ -51,18 +54,18 @@ private fun AppScaffold() {
     val currentRoute = backStackEntry?.destination?.route
     val items = listOf(
         ProfileNavItem(
-            route = "home",
-            label = "Главная",
+            route = "forecast",
+            labelRes = R.string.forecast_tab,
             icon = Icons.Default.Home
         ),
         ProfileNavItem(
             route = "measurements",
-            label = "Измерения",
+            labelRes = R.string.measurements_tab,
             icon = Icons.Default.Favorite
         ),
         ProfileNavItem(
             route = com.example.healthcodex.ui.profile.ProfileNav.view,
-            label = "Профиль",
+            labelRes = R.string.profile_tab,
             icon = Icons.Default.Person
         )
     )
@@ -84,8 +87,8 @@ private fun AppScaffold() {
                                 }
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
+                        icon = { Icon(item.icon, contentDescription = stringResource(id = item.labelRes)) },
+                        label = { Text(stringResource(id = item.labelRes)) }
                     )
                 }
             }
@@ -93,12 +96,17 @@ private fun AppScaffold() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "forecast",
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            composablePlaceholder("home")
+            composable("forecast") {
+                ForecastRoute(
+                    paddingValues = innerPadding,
+                    onFillProfile = { navController.navigate(com.example.healthcodex.ui.profile.ProfileNav.edit) }
+                )
+            }
             composablePlaceholder("measurements")
             ProfileNavGraph(navController, innerPadding)
         }
