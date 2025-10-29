@@ -5,6 +5,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 data class ProfileNavItem(
     val route: String,
-    val label: String,
+    val labelRes: Int,
     val icon: ImageVector
 )

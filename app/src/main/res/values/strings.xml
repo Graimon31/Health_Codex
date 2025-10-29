@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Health Codex</string>
     <string name="profile_tab">Профиль</string>
-    <string name="home_tab">Главная</string>
+    <string name="forecast_tab">Прогноз</string>
     <string name="measurements_tab">Измерения</string>
     <string name="profile_saved">Профиль сохранён</string>
     <string name="empty_profile_cta">Заполнить</string>
