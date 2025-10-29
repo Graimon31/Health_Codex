@@ -26,8 +26,8 @@
 
 ## Работа с ветками
 
-В репозитории основная ветка разработки называется `work`. Если она не отображается в списке веток Android Studio:
+В репозитории основная ветка разработки называется `code/implement-profile-section-with-jetpack-compose`. Если она не отображается в списке веток Android Studio:
 
 1. Откройте **Git** → **Fetch** для обновления списка удалённых веток.
-2. Найдите `origin/work` в разделе **Remote Branches** и выполните **Checkout** → **New Branch from Origin/work**.
-3. После создания локальной ветки `work` переключитесь на неё. Именно эта ветка содержит актуальный раздел профиля.
+2. Найдите `origin/code/implement-profile-section-with-jetpack-compose` в разделе **Remote Branches** и выполните **Checkout** → **New Branch from Origin/...**.
+3. После создания локальной ветки `code/implement-profile-section-with-jetpack-compose` переключитесь на неё — именно эта ветка содержит актуальный раздел профиля.
