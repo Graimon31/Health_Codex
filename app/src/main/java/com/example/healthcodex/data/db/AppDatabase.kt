@@ -6,16 +6,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.healthcodex.data.measurements.MeasurementConverters
 import com.example.healthcodex.data.profile.UserProfileConverters
 
 @Database(
-    entities = [UserProfileEntity::class],
-    version = 1,
+    entities = [UserProfileEntity::class, MeasurementEntity::class],
+    version = 2,
     exportSchema = false
 )
-@TypeConverters(UserProfileConverters::class)
+@TypeConverters(UserProfileConverters::class, MeasurementConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun measurementDao(): MeasurementDao
 
     companion object {
         @Volatile
