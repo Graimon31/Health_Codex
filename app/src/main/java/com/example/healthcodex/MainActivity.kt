@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcodex.ui.ProfileNavItem
@@ -105,7 +106,7 @@ private fun AppScaffold() {
 }
 
 private fun androidx.navigation.NavGraphBuilder.composablePlaceholder(route: String) {
-    androidx.navigation.compose.composable(route) {
+    composable(route) {
         Column(modifier = Modifier.fillMaxSize()) {
             Text(text = "Раздел $route в разработке")
         }
