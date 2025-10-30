@@ -14,7 +14,7 @@ import com.example.healthcodex.data.profile.UserProfileConverters
     version = 2,
     exportSchema = false
 )
-@TypeConverters(UserProfileConverters::class, MeasurementConverters::class)
+@TypeConverters(CommonConverters::class, UserProfileConverters::class, MeasurementConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun measurementDao(): MeasurementDao
