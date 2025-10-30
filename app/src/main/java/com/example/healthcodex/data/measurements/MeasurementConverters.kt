@@ -3,9 +3,7 @@ package com.example.healthcodex.data.measurements
 
 import androidx.room.TypeConverter
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import java.time.Instant
 
 /**
  * Room converters for measurement-specific types.
@@ -15,7 +13,6 @@ class MeasurementConverters {
         .add(KotlinJsonAdapterFactory())
         .build()
     private val detailsAdapter = moshi.adapter(MeasurementDetails::class.java)
-    private val stringListAdapter = moshi.adapter<List<String>>(Types.newParameterizedType(List::class.java, String::class.java))
 
     @TypeConverter
     fun typeFromString(value: String?): MeasurementType? = value?.let { MeasurementType.valueOf(it) }
@@ -36,20 +33,8 @@ class MeasurementConverters {
     fun confidenceToString(confidence: MeasurementConfidence?): String? = confidence?.name
 
     @TypeConverter
-    fun instantFromString(value: String?): Instant? = value?.let(Instant::parse)
-
-    @TypeConverter
-    fun instantToString(instant: Instant?): String? = instant?.toString()
-
-    @TypeConverter
     fun detailsFromJson(json: String?): MeasurementDetails? = json?.let { detailsAdapter.fromJson(it) }
 
     @TypeConverter
     fun detailsToJson(details: MeasurementDetails?): String? = details?.let { detailsAdapter.toJson(it) }
-
-    @TypeConverter
-    fun stringListFromJson(json: String?): List<String> = json?.let { stringListAdapter.fromJson(it) } ?: emptyList()
-
-    @TypeConverter
-    fun stringListToJson(list: List<String>?): String = stringListAdapter.toJson(list ?: emptyList())
 }
