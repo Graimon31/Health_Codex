@@ -1,8 +1,7 @@
 // app/src/main/java/com/example/healthcodex/ui/measurements/MeasurementsViewModel.kt
 package com.example.healthcodex.ui.measurements
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -35,10 +34,10 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel orchestrating the measurements feature state and actions.
  */
-class MeasurementsViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = MeasurementsRepository(application.applicationContext)
-    private val profileRepository = ProfileRepository(application.applicationContext)
+class MeasurementsViewModel(
+    private val repository: MeasurementsRepository,
+    private val profileRepository: ProfileRepository
+) : ViewModel() {
 
     private val filterState = MutableStateFlow(MeasurementFilter())
 
@@ -276,16 +275,20 @@ class MeasurementsViewModel(application: Application) : AndroidViewModel(applica
     )
 
     companion object {
-        fun factory(application: Application): ViewModelProvider.Factory =
-            object : ViewModelProvider.AndroidViewModelFactory(application) {
+        fun factory(context: Context): ViewModelProvider.Factory {
+            val appContext = context.applicationContext ?: context
+            return object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MeasurementsViewModel::class.java)) {
+                        val measurementsRepository = MeasurementsRepository(appContext)
+                        val profileRepository = ProfileRepository(appContext)
                         @Suppress("UNCHECKED_CAST")
-                        return MeasurementsViewModel(application) as T
+                        return MeasurementsViewModel(measurementsRepository, profileRepository) as T
                     }
-                    return super.create(modelClass)
+                    throw IllegalArgumentException("Unknown ViewModel class: ${'$'}modelClass")
                 }
             }
+        }
     }
 }
 
