@@ -11,7 +11,7 @@ import com.example.healthcodex.data.profile.UserProfileConverters
 
 @Database(
     entities = [UserProfileEntity::class, MeasurementEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(CommonConverters::class, UserProfileConverters::class, MeasurementConverters::class)

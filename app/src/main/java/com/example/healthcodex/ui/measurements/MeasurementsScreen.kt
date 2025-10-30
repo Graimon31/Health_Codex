@@ -95,6 +95,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileDownload
@@ -103,6 +104,7 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelfImprovement
@@ -240,7 +242,9 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
                 onEdit = { entry -> viewModel.openEditor(entry) },
                 onDelete = { entry -> viewModel.delete(entry) },
-                onShare = { entry -> shareMeasurement(context, entry) }
+                onShare = { entry -> shareMeasurement(context, entry) },
+                onRetry = { viewModel.refresh() },
+                onDismissError = { viewModel.dismissError() }
             )
             PullRefreshIndicator(
                 refreshing = uiState.isRefreshing,
@@ -351,7 +355,9 @@ private fun MeasurementsList(
     onOpenDetail: (MeasurementEntry) -> Unit,
     onEdit: (MeasurementEntry) -> Unit,
     onDelete: (MeasurementEntry) -> Unit,
-    onShare: (MeasurementEntry) -> Unit
+    onShare: (MeasurementEntry) -> Unit,
+    onRetry: () -> Unit,
+    onDismissError: () -> Unit
 ) {
     val listState = rememberLazyListState()
     LazyColumn(
@@ -371,6 +377,15 @@ private fun MeasurementsList(
                         onTypeToggle = onTypeToggle
                     )
                 }
+            }
+        }
+        uiState.errorMessage?.let { message ->
+            item {
+                MeasurementsErrorCard(
+                    message = message,
+                    onRetry = onRetry,
+                    onDismiss = onDismissError
+                )
             }
         }
         item {
@@ -400,6 +415,53 @@ private fun MeasurementsList(
                         onDelete = { onDelete(entry) },
                         onShare = { onShare(entry) }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MeasurementsErrorCard(
+    message: String,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.measure_error_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDismiss) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.measure_error_dismiss))
+                }
+                TextButton(onClick = onRetry) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.measure_error_retry))
                 }
             }
         }
