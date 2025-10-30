@@ -131,8 +131,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues) {
     val context = LocalContext.current
-    val application = context.applicationContext as android.app.Application
-    val viewModel: MeasurementsViewModel = viewModel(factory = MeasurementsViewModel.factory(application))
+    val viewModel: MeasurementsViewModel = viewModel(factory = MeasurementsViewModel.factory(context))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val editorState by viewModel.editorState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
