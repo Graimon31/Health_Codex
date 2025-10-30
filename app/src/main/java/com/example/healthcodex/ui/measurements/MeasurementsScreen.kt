@@ -437,6 +437,7 @@ private fun MeasurementsFab(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (MeasurementPeriod) -> Unit) {
     val periods = listOf(
@@ -564,6 +565,7 @@ private fun SummarySection(summary: com.example.healthcodex.data.measurements.Me
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     ElevatedCard(
@@ -589,7 +591,7 @@ private fun SummaryTile(title: String, value: String, color: Color, icon: androi
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun MeasurementCard(
     entry: MeasurementEntry,
