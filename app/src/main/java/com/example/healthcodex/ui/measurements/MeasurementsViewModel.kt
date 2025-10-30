@@ -28,7 +28,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -57,7 +59,18 @@ class MeasurementsViewModel(
 
     private fun observeMeasurements() {
         viewModelScope.launch {
-            combine(repository.measurements, filterState) { entries, filter ->
+            combine(
+                repository.measurements.catch { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = throwable.localizedMessage ?: "Не удалось загрузить измерения"
+                        )
+                    }
+                    emit(emptyList())
+                },
+                filterState
+            ) { entries, filter ->
                 val filtered = applyFilter(entries, filter)
                 val groups = filtered
                     .groupBy { it.localDate() }
@@ -71,18 +84,28 @@ class MeasurementsViewModel(
                     summary = summary,
                     filter = filter
                 )
+            }.catch { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = throwable.localizedMessage ?: "Ошибка обработки измерений"
+                    )
+                }
             }.collect { collection ->
                 val devices = collection.raw.mapNotNull { it.deviceName?.takeIf(String::isNotBlank) }
                     .distinct()
                     .sorted()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    groups = collection.groups,
-                    summary = collection.summary,
-                    filter = collection.filter,
-                    availableDevices = devices,
-                    filteredEntries = collection.filtered
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        groups = collection.groups,
+                        summary = collection.summary,
+                        filter = collection.filter,
+                        availableDevices = devices,
+                        filteredEntries = collection.filtered,
+                        errorMessage = null
+                    )
+                }
             }
         }
     }
@@ -100,9 +123,9 @@ class MeasurementsViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            _uiState.update { it.copy(isRefreshing = true, errorMessage = null) }
             delay(350)
-            _uiState.value = _uiState.value.copy(isRefreshing = false)
+            _uiState.update { it.copy(isRefreshing = false) }
         }
     }
 
@@ -200,6 +223,10 @@ class MeasurementsViewModel(
             repository.delete(entry)
             _events.emit(MeasurementsEvent.ShowMessage("Запись удалена"))
         }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     private fun applyFilter(entries: List<MeasurementEntry>, filter: MeasurementFilter): List<MeasurementEntry> {
@@ -302,7 +329,8 @@ data class MeasurementsUiState(
     val bleConnected: Boolean = false,
     val bleDeviceName: String? = null,
     val availableDevices: List<String> = emptyList(),
-    val filteredEntries: List<MeasurementEntry> = emptyList()
+    val filteredEntries: List<MeasurementEntry> = emptyList(),
+    val errorMessage: String? = null
 )
 
 /** Group of measurements for a specific day. */
