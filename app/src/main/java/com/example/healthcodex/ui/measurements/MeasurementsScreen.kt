@@ -11,12 +11,15 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,6 +38,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -56,11 +61,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,7 +79,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -280,15 +285,15 @@ private fun MeasurementsTopBar(
                             contentDescription = stringResource(id = R.string.measure_action_export)
                         )
                     }
-                    androidx.compose.material3.DropdownMenu(
+                    DropdownMenu(
                         expanded = exportMenuVisible,
                         onDismissRequest = onExportDismiss
                     ) {
-                        androidx.compose.material3.DropdownMenuItem(
+                        DropdownMenuItem(
                             text = { Text(stringResource(id = R.string.measure_export_json)) },
                             onClick = { onExportFormat(MeasurementsExport.Format.JSON) }
                         )
-                        androidx.compose.material3.DropdownMenuItem(
+                        DropdownMenuItem(
                             text = { Text(stringResource(id = R.string.measure_export_csv)) },
                             onClick = { onExportFormat(MeasurementsExport.Format.CSV) }
                         )
@@ -467,11 +472,12 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (MeasurementType) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(text = stringResource(id = R.string.measure_filters_type), style = MaterialTheme.typography.labelLarge)
-        androidx.compose.foundation.layout.FlowRow(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 8.dp)
@@ -496,11 +502,12 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SummarySection(summary: com.example.healthcodex.data.measurements.MeasurementSummary) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(text = stringResource(id = R.string.measure_summary_title), style = MaterialTheme.typography.titleMedium)
-        androidx.compose.foundation.layout.FlowRow(
+        FlowRow(
             modifier = Modifier.padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -582,6 +589,7 @@ private fun SummaryTile(title: String, value: String, color: Color, icon: androi
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MeasurementCard(
     entry: MeasurementEntry,
@@ -662,7 +670,7 @@ private fun MeasurementCard(
                 }
             }
             if (entry.tags.isNotEmpty()) {
-                androidx.compose.foundation.layout.FlowRow(
+                FlowRow(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -674,22 +682,22 @@ private fun MeasurementCard(
             }
         }
     }
-    androidx.compose.material3.DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-        androidx.compose.material3.DropdownMenuItem(
+    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+        DropdownMenuItem(
             text = { Text(stringResource(id = R.string.measure_action_edit)) },
             onClick = {
                 menuExpanded = false
                 onEdit()
             }
         )
-        androidx.compose.material3.DropdownMenuItem(
+        DropdownMenuItem(
             text = { Text(stringResource(id = R.string.measure_action_share)) },
             onClick = {
                 menuExpanded = false
                 onShare()
             }
         )
-        androidx.compose.material3.DropdownMenuItem(
+        DropdownMenuItem(
             text = { Text(stringResource(id = R.string.measure_action_delete)) },
             onClick = {
                 menuExpanded = false
@@ -862,8 +870,8 @@ private fun MeasurementsFilterSheet(
                         }
                     }
                 )
-                androidx.compose.material3.DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    androidx.compose.material3.DropdownMenuItem(
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.measure_sheet_device_all)) },
                         onClick = {
                             onDeviceChange(null)
@@ -871,7 +879,7 @@ private fun MeasurementsFilterSheet(
                         }
                     )
                     state.availableDevices.forEach { device ->
-                        androidx.compose.material3.DropdownMenuItem(
+                        DropdownMenuItem(
                             text = { Text(device) },
                             onClick = {
                                 onDeviceChange(device)

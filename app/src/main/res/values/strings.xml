@@ -19,6 +19,7 @@
     <string name="measure_action_add_manual">Добавить запись</string>
     <string name="measure_action_edit">Редактировать</string>
     <string name="measure_action_share">Поделиться</string>
+    <string name="measure_share_title">Поделиться измерением</string>
     <string name="measure_action_delete">Удалить</string>
     <string name="measure_delete_confirm_title">Удалить запись?</string>
     <string name="measure_delete_confirm_message">Это действие нельзя отменить.</string>
