@@ -24,10 +24,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.healthcodex.feature.forecast.ForecastRoute
 import com.example.healthcodex.R
+import com.example.healthcodex.feature.forecast.ForecastRoute
 import com.example.healthcodex.ui.ProfileNavItem
+import com.example.healthcodex.ui.measurements.MeasurementsNav
 import com.example.healthcodex.ui.measurements.measurementsNavGraph
+import com.example.healthcodex.ui.profile.ProfileNav
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
 
@@ -52,6 +54,8 @@ private fun AppScaffold() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val measurementHome = MeasurementsNav.home
+    val profileStart = ProfileNav.view
     val items = listOf(
         ProfileNavItem(
             route = "forecast",
@@ -59,12 +63,12 @@ private fun AppScaffold() {
             icon = Icons.Default.Home
         ),
         ProfileNavItem(
-            route = "measurements",
+            route = measurementHome,
             labelRes = R.string.measurements_tab,
             icon = Icons.Default.Favorite
         ),
         ProfileNavItem(
-            route = com.example.healthcodex.ui.profile.ProfileNav.view,
+            route = profileStart,
             labelRes = R.string.profile_tab,
             icon = Icons.Default.Person
         )
@@ -74,10 +78,16 @@ private fun AppScaffold() {
         bottomBar = {
             NavigationBar {
                 items.forEach { item ->
+                    val isSelected = when (item.route) {
+                        "forecast" -> currentRoute == item.route
+                        measurementHome -> currentRoute?.startsWith("measurements") == true
+                        profileStart -> currentRoute?.startsWith("profile") == true
+                        else -> currentRoute == item.route
+                    }
                     NavigationBarItem(
-                        selected = currentRoute == item.route,
+                        selected = isSelected,
                         onClick = {
-                            if (currentRoute != item.route) {
+                            if (!isSelected) {
                                 navController.navigate(item.route) {
                                     launchSingleTop = true
                                     restoreState = true
@@ -104,7 +114,7 @@ private fun AppScaffold() {
             composable("forecast") {
                 ForecastRoute(
                     paddingValues = innerPadding,
-                    onFillProfile = { navController.navigate(com.example.healthcodex.ui.profile.ProfileNav.edit) }
+                    onFillProfile = { navController.navigate(ProfileNav.edit) }
                 )
             }
             measurementsNavGraph(navController, innerPadding)
