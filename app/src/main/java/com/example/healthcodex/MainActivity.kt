@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -80,7 +81,7 @@ private fun AppScaffold() {
                 items.forEach { item ->
                     val isSelected = when (item.route) {
                         "forecast" -> currentRoute == item.route
-                        measurementHome -> currentRoute?.startsWith("measurements") == true
+                        measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
                         profileStart -> currentRoute?.startsWith("profile") == true
                         else -> currentRoute == item.route
                     }
@@ -91,7 +92,7 @@ private fun AppScaffold() {
                                 navController.navigate(item.route) {
                                     launchSingleTop = true
                                     restoreState = true
-                                    popUpTo(navController.graph.startDestinationId) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
                                 }
