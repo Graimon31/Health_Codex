@@ -37,7 +37,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
@@ -94,7 +93,7 @@ import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -238,7 +237,6 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
                 isSearchVisible = isSearchVisible,
                 onPeriodSelected = { viewModel.setPeriod(it) },
                 onTypeToggle = { viewModel.toggleType(it) },
-                onAddType = { viewModel.openEditorForNew(it) },
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
                 onEdit = { entry -> viewModel.openEditor(entry) },
                 onDelete = { entry -> viewModel.delete(entry) },
@@ -351,7 +349,6 @@ private fun MeasurementsList(
     isSearchVisible: Boolean,
     onPeriodSelected: (MeasurementPeriod) -> Unit,
     onTypeToggle: (MeasurementType) -> Unit,
-    onAddType: (MeasurementType) -> Unit,
     onOpenDetail: (MeasurementEntry) -> Unit,
     onEdit: (MeasurementEntry) -> Unit,
     onDelete: (MeasurementEntry) -> Unit,
@@ -404,7 +401,7 @@ private fun MeasurementsList(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Divider(modifier = Modifier.padding(top = 4.dp))
+                        HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
                     }
                 }
                 items(group.entries, key = { it.id }) { entry ->
@@ -477,8 +474,11 @@ private fun MeasurementsFab(
 ) {
     Column(horizontalAlignment = Alignment.End) {
         if (connected) {
+            val label = deviceName?.takeIf { it.isNotBlank() }?.let {
+                stringResource(id = R.string.measure_action_start_measurement_device, it)
+            } ?: stringResource(id = R.string.measure_action_start_measurement)
             ExtendedFloatingActionButton(
-                text = { Text(stringResource(id = R.string.measure_action_start_measurement)) },
+                text = { Text(label) },
                 icon = {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
@@ -584,7 +584,7 @@ private fun SummarySection(summary: com.example.healthcodex.data.measurements.Me
                 title = stringResource(id = R.string.measure_summary_steps),
                 value = Formatters.formatInt(summary.steps),
                 color = Color(0xFF10B981),
-                icon = Icons.Default.DirectionsWalk
+                icon = Icons.AutoMirrored.Filled.DirectionsWalk
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_calories),
@@ -793,7 +793,7 @@ private fun MeasurementCard(
 @Composable
 private fun measurementIcon(type: MeasurementType) = when (type) {
     MeasurementType.HEART_RATE -> Icons.Default.Favorite
-    MeasurementType.STEPS -> Icons.Default.DirectionsWalk
+    MeasurementType.STEPS -> Icons.AutoMirrored.Filled.DirectionsWalk
     MeasurementType.CALORIES -> Icons.Default.LocalFireDepartment
     MeasurementType.BLOOD_PRESSURE -> Icons.Default.Bloodtype
     MeasurementType.WEIGHT -> Icons.Default.MonitorWeight
@@ -889,19 +889,21 @@ private fun MeasurementsFilterSheet(
                 }
             }
             Text(text = stringResource(id = R.string.measure_sheet_source))
+            val sourceFilter = state.filter.source
+            val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
-                    selected = state.filter.source is MeasurementSourceFilter.All,
+                    selected = sourceFilter is MeasurementSourceFilter.All,
                     onClick = { onSourceChange(MeasurementSourceFilter.All) },
                     label = { Text(text = stringResource(id = R.string.measure_sheet_source_all)) }
                 )
                 FilterChip(
-                    selected = state.filter.source is MeasurementSourceFilter.Only && (state.filter.source as MeasurementSourceFilter.Only).source == MeasurementSource.DEVICE,
+                    selected = selectedSource == MeasurementSource.DEVICE,
                     onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) },
                     label = { Text(text = stringResource(id = R.string.measure_sheet_source_device)) }
                 )
                 FilterChip(
-                    selected = state.filter.source is MeasurementSourceFilter.Only && (state.filter.source as MeasurementSourceFilter.Only).source == MeasurementSource.MANUAL,
+                    selected = selectedSource == MeasurementSource.MANUAL,
                     onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) },
                     label = { Text(text = stringResource(id = R.string.measure_sheet_source_manual)) }
                 )
@@ -1061,7 +1063,6 @@ private fun MeasurementEditorDialog(
 
 @Composable
 private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) -> MeasurementForm) -> Unit) {
-    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MeasurementTypeDropdown(form.type) { newType ->
             onUpdate { it.copy(type = newType) }

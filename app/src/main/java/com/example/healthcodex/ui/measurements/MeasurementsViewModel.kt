@@ -2,6 +2,7 @@
 package com.example.healthcodex.ui.measurements
 
 import android.content.Context
+import com.example.healthcodex.HealthCodexApp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -113,10 +114,12 @@ class MeasurementsViewModel(
     private fun observeBleStatus() {
         viewModelScope.launch {
             profileRepository.profileFlow.collect { profile ->
-                _uiState.value = _uiState.value.copy(
-                    bleConnected = !profile?.bleDeviceAddress.isNullOrBlank(),
-                    bleDeviceName = profile?.bleDeviceName
-                )
+                _uiState.update {
+                    it.copy(
+                        bleConnected = !profile?.bleDeviceAddress.isNullOrBlank(),
+                        bleDeviceName = profile?.bleDeviceName
+                    )
+                }
             }
         }
     }
@@ -271,8 +274,8 @@ class MeasurementsViewModel(
             val duration = it.details.durationMinutes
             if (duration != null) duration else {
                 val start = it.startTimestamp ?: it.details.startInstant
-                val end = it.details.endInstant ?: it.timestamp
-                if (start != null && end != null) {
+                if (start != null) {
+                    val end = it.details.endInstant ?: it.timestamp
                     val minutes = java.time.Duration.between(start, end).toMinutes().toInt()
                     minutes.coerceAtLeast(0)
                 } else 0
@@ -304,11 +307,12 @@ class MeasurementsViewModel(
     companion object {
         fun factory(context: Context): ViewModelProvider.Factory {
             val appContext = context.applicationContext ?: context
+            val app = appContext as? HealthCodexApp
+            val measurementsRepository = app?.measurementsRepository ?: MeasurementsRepository(appContext)
+            val profileRepository = app?.profileRepository ?: ProfileRepository(appContext)
             return object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MeasurementsViewModel::class.java)) {
-                        val measurementsRepository = MeasurementsRepository(appContext)
-                        val profileRepository = ProfileRepository(appContext)
                         @Suppress("UNCHECKED_CAST")
                         return MeasurementsViewModel(measurementsRepository, profileRepository) as T
                     }

@@ -23,7 +23,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Entry point for the forecast screen to be used inside navigation.
@@ -54,7 +54,7 @@ fun ForecastRoute(
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val viewModel: ForecastViewModel = viewModel(factory = ForecastViewModel.factory(application))
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Прогноз") }) },
@@ -164,7 +164,7 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
             Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
             if (!forecast.profileMissing) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(12.dp))
                 AssistChip(
                     onClick = {},

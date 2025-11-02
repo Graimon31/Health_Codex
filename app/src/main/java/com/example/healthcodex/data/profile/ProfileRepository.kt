@@ -3,6 +3,7 @@ package com.example.healthcodex.data.profile
 
 import android.content.Context
 import com.example.healthcodex.data.db.AppDatabase
+import com.example.healthcodex.data.db.UserProfileDao
 import com.example.healthcodex.data.db.UserProfileEntity
 import com.example.healthcodex.data.prefs.PrefsRepository
 import com.example.healthcodex.util.Validation
@@ -17,23 +18,26 @@ import kotlinx.coroutines.withContext
  * Repository combining Room and DataStore sources.
  */
 class ProfileRepository(
-    context: Context,
+    private val userProfileDao: UserProfileDao,
+    private val prefsRepository: PrefsRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    private val database = AppDatabase.getInstance(context)
-    private val prefsRepository = PrefsRepository(context)
-    private val dao = database.userProfileDao()
+    constructor(context: Context, ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : this(
+        AppDatabase.getInstance(context).userProfileDao(),
+        PrefsRepository(context),
+        ioDispatcher
+    )
 
     val profileFlow: Flow<UserProfile?> =
-        dao.observeProfile().map { it?.toDomain() }.flowOn(ioDispatcher)
+        userProfileDao.observeProfile().map { it?.toDomain() }.flowOn(ioDispatcher)
 
     suspend fun getProfile(): UserProfile? = withContext(ioDispatcher) {
-        dao.getProfile()?.toDomain()
+        userProfileDao.getProfile()?.toDomain()
     }
 
     suspend fun upsertProfile(profile: UserProfile) = withContext(ioDispatcher) {
         Validation.validateProfile(profile)
-        dao.upsertProfile(profile.toEntity())
+        userProfileDao.upsertProfile(profile.toEntity())
     }
 
     suspend fun linkBleDevice(name: String?, address: String?) {
