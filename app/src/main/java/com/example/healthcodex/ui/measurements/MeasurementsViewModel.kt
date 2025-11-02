@@ -257,8 +257,10 @@ class MeasurementsViewModel(
     private fun buildSummary(entries: List<MeasurementEntry>): MeasurementSummary {
         val hrValues = entries.filter { it.type == MeasurementType.HEART_RATE }.mapNotNull { it.details.primaryValue }
         val avgHr = hrValues.takeIf { it.isNotEmpty() }?.average()
-        val steps = entries.filter { it.type == MeasurementType.STEPS }.sumOf { (it.details.primaryValue ?: 0.0).toLong() }
-        val calories = entries.filter { it.type == MeasurementType.CALORIES }.sumOf { (it.details.primaryValue ?: 0.0).toLong() }
+        val stepEntries = entries.filter { it.type == MeasurementType.STEPS }
+        val steps = stepEntries.takeIf { it.isNotEmpty() }?.sumOf { (it.details.primaryValue ?: 0.0).toLong() }
+        val calorieEntries = entries.filter { it.type == MeasurementType.CALORIES }
+        val calories = calorieEntries.takeIf { it.isNotEmpty() }?.sumOf { (it.details.primaryValue ?: 0.0).toLong() }
         val pressures = entries.filter { it.type == MeasurementType.BLOOD_PRESSURE }
         val avgSys = pressures.mapNotNull { it.details.primaryValue }.takeIf { it.isNotEmpty() }?.average()
         val avgDia = pressures.mapNotNull { it.details.secondaryValue }.takeIf { it.isNotEmpty() }?.average()
@@ -328,7 +330,7 @@ data class MeasurementsUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val groups: List<MeasurementDayGroup> = emptyList(),
-    val summary: MeasurementSummary = MeasurementSummary(null, 0, 0, null, null, null, null, null),
+    val summary: MeasurementSummary = MeasurementSummary(null, null, null, null, null, null, null, null),
     val filter: MeasurementFilter = MeasurementFilter(),
     val bleConnected: Boolean = false,
     val bleDeviceName: String? = null,

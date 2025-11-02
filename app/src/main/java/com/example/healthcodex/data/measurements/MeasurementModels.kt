@@ -154,8 +154,8 @@ data class MeasurementValueRange(
  */
 data class MeasurementSummary(
     val averageHr: Double?,
-    val steps: Long,
-    val calories: Long,
+    val steps: Long?,
+    val calories: Long?,
     val pressure: Pair<Double, Double>?,
     val weightDelta: Double?,
     val averageSpo2: Double?,
