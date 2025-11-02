@@ -4,6 +4,7 @@ package com.example.healthcodex.ui.profile
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.healthcodex.HealthCodexApp
 import com.example.healthcodex.data.profile.Medication
 import com.example.healthcodex.data.profile.ProfileRepository
 import com.example.healthcodex.data.profile.Sex
@@ -26,7 +27,8 @@ import kotlinx.coroutines.launch
  */
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = ProfileRepository(application.applicationContext)
+    private val repository = (application as? HealthCodexApp)?.profileRepository
+        ?: ProfileRepository(application.applicationContext)
 
     private val _viewState = MutableStateFlow(ProfileViewState())
     val viewState: StateFlow<ProfileViewState> = _viewState.asStateFlow()
@@ -289,14 +291,15 @@ data class ProfileForm(
         parseWeight()?.let {
             if (it !in 20f..400f) issues["weight"] = "Вес 20-400"
         }
-        listOfNotNull(parseInt(restingHr)?.takeIf { it !in 30..220 }?.let { "restingHr" to "Пульс 30-220" },
+        listOfNotNull(
+            parseInt(restingHr)?.takeIf { it !in 30..220 }?.let { "restingHr" to "Пульс 30-220" },
             parseInt(hrHigh)?.takeIf { it !in 30..220 }?.let { "hrHigh" to "Порог HR 30-220" },
             parseInt(bpBaselineSystolic)?.takeIf { it !in 70..250 }?.let { "bpBaselineSystolic" to "САД 70-250" },
             parseInt(bpBaselineDiastolic)?.takeIf { it !in 40..150 }?.let { "bpBaselineDiastolic" to "ДАД 40-150" },
             parseInt(bpSysHigh)?.takeIf { it !in 70..250 }?.let { "bpSysHigh" to "Порог САД 70-250" },
             parseInt(bpDiaHigh)?.takeIf { it !in 40..150 }?.let { "bpDiaHigh" to "Порог ДАД 40-150" }
         ).forEach { pair ->
-            if (pair != null) issues[pair.first] = pair.second
+            issues[pair.first] = pair.second
         }
         if (emergencyPhone.isNotEmpty() && emergencyPhone.length < 5) {
             issues["emergencyPhone"] = "Телефон слишком короткий"

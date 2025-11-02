@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.healthcodex.HealthCodexApp
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,8 @@ class MeasurementDetailViewModel(
     private val measurementId: Long
 ) : AndroidViewModel(application) {
 
-    private val repository = MeasurementsRepository(application.applicationContext)
+    private val repository = (application as? HealthCodexApp)?.measurementsRepository
+        ?: MeasurementsRepository(application.applicationContext)
 
     private val _state = MutableStateFlow(MeasurementDetailState())
     val state: StateFlow<MeasurementDetailState> = _state.asStateFlow()

@@ -103,9 +103,8 @@ object Validation {
                 require(spo2 in MIN_SPO2..MAX_SPO2) { "SpO₂ вне диапазона" }
             }
             MeasurementType.SLEEP -> {
-                val start = entry.startTimestamp ?: details.startInstant
+                val start = requireNotNull(entry.startTimestamp ?: details.startInstant) { "Укажите период сна" }
                 val end = details.endInstant ?: entry.timestamp
-                require(start != null && end != null) { "Укажите период сна" }
                 require(end.isAfter(start)) { "Окончание сна должно быть позже начала" }
                 details.durationMinutes?.let { duration ->
                     require(duration > 0) { "Длительность сна должна быть положительной" }

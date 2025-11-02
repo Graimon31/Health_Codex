@@ -2,6 +2,7 @@
 package com.example.healthcodex.data.measurements
 
 import androidx.room.TypeConverter
+import com.example.healthcodex.data.db.InstantJsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
@@ -10,6 +11,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
  */
 class MeasurementConverters {
     private val moshi: Moshi = Moshi.Builder()
+        .add(InstantJsonAdapter())
         .add(KotlinJsonAdapterFactory())
         .build()
     private val detailsAdapter = moshi.adapter(MeasurementDetails::class.java)
@@ -44,5 +46,6 @@ class MeasurementConverters {
     } ?: MeasurementDetails()
 
     @TypeConverter
-    fun detailsToJson(details: MeasurementDetails?): String? = details?.let { detailsAdapter.toJson(it) }
+    fun detailsToJson(details: MeasurementDetails?): String =
+        runCatching { detailsAdapter.toJson(details ?: MeasurementDetails()) }.getOrDefault("{}")
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.healthcodex.HealthCodexApp
 import com.example.healthcodex.data.profile.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
  */
 class ForecastViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = ProfileRepository(application.applicationContext)
+    private val repository = (application as? HealthCodexApp)?.profileRepository
+        ?: ProfileRepository(application.applicationContext)
 
     private val _state = MutableStateFlow(ForecastViewState())
     val state: StateFlow<ForecastViewState> = _state.asStateFlow()

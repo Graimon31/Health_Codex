@@ -16,6 +16,7 @@
     <string name="measure_search_hint">Поиск по заметкам или типу…</string>
     <string name="measure_action_clear_search">Очистить поиск</string>
     <string name="measure_action_start_measurement">Начать измерение</string>
+    <string name="measure_action_start_measurement_device">Начать измерение (%1$s)</string>
     <string name="measure_action_add_manual">Добавить запись</string>
     <string name="measure_action_edit">Редактировать</string>
     <string name="measure_action_share">Поделиться</string>

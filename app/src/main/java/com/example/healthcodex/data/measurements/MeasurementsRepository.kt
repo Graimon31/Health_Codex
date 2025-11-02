@@ -3,6 +3,7 @@ package com.example.healthcodex.data.measurements
 
 import android.content.Context
 import com.example.healthcodex.data.db.AppDatabase
+import com.example.healthcodex.data.db.MeasurementDao
 import com.example.healthcodex.data.db.MeasurementEntity
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -15,11 +16,13 @@ import kotlinx.coroutines.withContext
  * Repository orchestrating measurement persistence and mapping.
  */
 class MeasurementsRepository(
-    context: Context,
+    private val dao: MeasurementDao,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    private val database = AppDatabase.getInstance(context)
-    private val dao = database.measurementDao()
+    constructor(context: Context, ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : this(
+        AppDatabase.getInstance(context).measurementDao(),
+        ioDispatcher
+    )
 
     val measurements: Flow<List<MeasurementEntry>> =
         dao.observeMeasurements().map { list -> list.map { it.toDomain() } }.flowOn(ioDispatcher)

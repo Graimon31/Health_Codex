@@ -35,7 +35,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.healthcodex.feature.profile.ProfileExportImport
 import com.example.healthcodex.util.Formatters
@@ -56,8 +56,8 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(application))
-    val state by viewModel.viewState.collectAsState()
-    val effect by viewModel.effects.collectAsState()
+    val state by viewModel.viewState.collectAsStateWithLifecycle()
+    val effect by viewModel.effects.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     var showBleDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -118,17 +118,13 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                     Text("Безопасность")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = {
-                    profile?.let { ProfileExportImport.shareIce(context, it) }
-                }) {
+                ElevatedButton(onClick = { ProfileExportImport.shareIce(context, profile) }) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Поделиться ICE")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = {
-                    profile?.let { ProfileExportImport.exportProfile(context, it) }
-                }) {
+                ElevatedButton(onClick = { ProfileExportImport.exportProfile(context, profile) }) {
                     Icon(Icons.Default.FileDownload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Экспорт в JSON")
