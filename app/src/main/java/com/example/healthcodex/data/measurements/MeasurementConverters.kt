@@ -15,25 +15,33 @@ class MeasurementConverters {
     private val detailsAdapter = moshi.adapter(MeasurementDetails::class.java)
 
     @TypeConverter
-    fun typeFromString(value: String?): MeasurementType? = value?.let { MeasurementType.valueOf(it) }
+    fun typeFromString(value: String?): MeasurementType = value?.let {
+        runCatching { MeasurementType.valueOf(it) }.getOrElse { MeasurementType.HEART_RATE }
+    } ?: MeasurementType.HEART_RATE
 
     @TypeConverter
     fun typeToString(type: MeasurementType?): String? = type?.name
 
     @TypeConverter
-    fun sourceFromString(value: String?): MeasurementSource? = value?.let { MeasurementSource.valueOf(it) }
+    fun sourceFromString(value: String?): MeasurementSource = value?.let {
+        runCatching { MeasurementSource.valueOf(it) }.getOrElse { MeasurementSource.DEVICE }
+    } ?: MeasurementSource.DEVICE
 
     @TypeConverter
     fun sourceToString(source: MeasurementSource?): String? = source?.name
 
     @TypeConverter
-    fun confidenceFromString(value: String?): MeasurementConfidence? = value?.let { MeasurementConfidence.valueOf(it) }
+    fun confidenceFromString(value: String?): MeasurementConfidence = value?.let {
+        runCatching { MeasurementConfidence.valueOf(it) }.getOrElse { MeasurementConfidence.HIGH }
+    } ?: MeasurementConfidence.HIGH
 
     @TypeConverter
     fun confidenceToString(confidence: MeasurementConfidence?): String? = confidence?.name
 
     @TypeConverter
-    fun detailsFromJson(json: String?): MeasurementDetails? = json?.let { detailsAdapter.fromJson(it) }
+    fun detailsFromJson(json: String?): MeasurementDetails = json?.let {
+        runCatching { detailsAdapter.fromJson(it) }.getOrNull()
+    } ?: MeasurementDetails()
 
     @TypeConverter
     fun detailsToJson(details: MeasurementDetails?): String? = details?.let { detailsAdapter.toJson(it) }
