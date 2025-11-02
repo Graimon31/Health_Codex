@@ -17,13 +17,19 @@ class CommonConverters {
     private val stringListAdapter = moshi.adapter<List<String>>(Types.newParameterizedType(List::class.java, String::class.java))
 
     @TypeConverter
-    fun stringListFromJson(value: String?): List<String> = value?.let { stringListAdapter.fromJson(it) } ?: emptyList()
+    fun stringListFromJson(value: String?): List<String> = value?.let {
+        runCatching { stringListAdapter.fromJson(it) }.getOrNull() ?: emptyList()
+    } ?: emptyList()
 
     @TypeConverter
-    fun stringListToJson(list: List<String>?): String = stringListAdapter.toJson(list ?: emptyList())
+    fun stringListToJson(list: List<String>?): String = runCatching {
+        stringListAdapter.toJson(list ?: emptyList())
+    }.getOrDefault("[]")
 
     @TypeConverter
-    fun instantFromString(value: String?): Instant? = value?.let(Instant::parse)
+    fun instantFromString(value: String?): Instant? = value?.let {
+        runCatching { Instant.parse(it) }.getOrNull()
+    }
 
     @TypeConverter
     fun instantToString(instant: Instant?): String? = instant?.toString()
