@@ -22,11 +22,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -43,6 +47,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -51,6 +56,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -63,6 +69,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.tooltipAnchor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -81,6 +88,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
@@ -124,6 +132,10 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Calendar
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
+private val InteractiveRadius = 12.dp
+private val InteractiveShape = RoundedCornerShape(InteractiveRadius)
 
 /**
  * Entry point composable that wires the view model with the screen.
@@ -176,11 +188,18 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         refreshing = uiState.isRefreshing,
         onRefresh = { viewModel.refresh() }
     )
+    val screenBackground = if (isSystemInDarkTheme()) {
+        MaterialTheme.colorScheme.background
+    } else {
+        Color(0xFFF9FAFB)
+    }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
+            .background(screenBackground)
             .padding(paddingValues),
+        containerColor = screenBackground,
         topBar = {
             MeasurementsTopBar(
                 isSearchVisible = isSearchVisible,
@@ -235,6 +254,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             MeasurementsList(
                 uiState = uiState,
                 isSearchVisible = isSearchVisible,
+                backgroundColor = screenBackground,
                 onPeriodSelected = { viewModel.setPeriod(it) },
                 onTypeToggle = { viewModel.toggleType(it) },
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
@@ -251,6 +271,30 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             )
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.titleMedium.copy(
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold
+        ),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+private fun SupportLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -273,48 +317,53 @@ private fun MeasurementsTopBar(
             title = { Text(text = stringResource(id = R.string.measurements_title)) },
             colors = TopAppBarDefaults.largeTopAppBarColors(),
             actions = {
-                IconButton(onClick = onToggleSearch) {
-                    Icon(
-                        imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
-                        contentDescription = stringResource(id = R.string.measure_action_search)
-                    )
-                }
-                Box {
-                    IconButton(onClick = onToggleExportMenu) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onToggleSearch) {
                         Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = stringResource(id = R.string.measure_action_export)
+                            imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = stringResource(id = R.string.measure_action_search)
                         )
                     }
-                    DropdownMenu(
-                        expanded = exportMenuVisible,
-                        onDismissRequest = onExportDismiss
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.measure_export_json)) },
-                            onClick = { onExportFormat(MeasurementsExport.Format.JSON) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.measure_export_csv)) },
-                            onClick = { onExportFormat(MeasurementsExport.Format.CSV) }
+                    Box {
+                        IconButton(onClick = onToggleExportMenu) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = stringResource(id = R.string.measure_action_export)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = exportMenuVisible,
+                            onDismissRequest = onExportDismiss
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.measure_export_json)) },
+                                onClick = { onExportFormat(MeasurementsExport.Format.JSON) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.measure_export_csv)) },
+                                onClick = { onExportFormat(MeasurementsExport.Format.CSV) }
+                            )
+                        }
+                    }
+                    IconButton(onClick = onShowFilters) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = stringResource(id = R.string.measure_action_filters)
                         )
                     }
-                }
-                IconButton(onClick = onShowFilters) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = stringResource(id = R.string.measure_action_filters)
-                    )
-                }
-                val statusColor = if (bleConnected) Color(0xFF10B981) else Color(0xFF9CA3AF)
-                BadgedBox(badge = {
-                    Badge(containerColor = statusColor) {}
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Bluetooth,
-                        tint = statusColor,
-                        contentDescription = bleDeviceName ?: stringResource(id = R.string.measure_ble_status)
-                    )
+                    val statusColor = if (bleConnected) Color(0xFF10B981) else Color(0xFF9CA3AF)
+                    BadgedBox(badge = {
+                        Badge(containerColor = statusColor) {}
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Bluetooth,
+                            tint = statusColor,
+                            contentDescription = bleDeviceName ?: stringResource(id = R.string.measure_ble_status)
+                        )
+                    }
                 }
             }
         )
@@ -347,6 +396,7 @@ private fun MeasurementsTopBar(
 private fun MeasurementsList(
     uiState: MeasurementsUiState,
     isSearchVisible: Boolean,
+    backgroundColor: Color,
     onPeriodSelected: (MeasurementPeriod) -> Unit,
     onTypeToggle: (MeasurementType) -> Unit,
     onOpenDetail: (MeasurementEntry) -> Unit,
@@ -363,18 +413,24 @@ private fun MeasurementsList(
         contentPadding = PaddingValues(bottom = 120.dp)
     ) {
         stickyHeader {
-            Surface(color = MaterialTheme.colorScheme.background) {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    PeriodSelector(
-                        selected = uiState.filter.period,
-                        onPeriodSelected = onPeriodSelected
-                    )
-                    TypeSelector(
-                        selectedTypes = uiState.filter.selectedTypes,
-                        onTypeToggle = onTypeToggle
-                    )
-                }
+            Surface(color = backgroundColor) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                PeriodSelector(
+                    selected = uiState.filter.period,
+                    onPeriodSelected = onPeriodSelected
+                )
+                TypeSelector(
+                    selectedTypes = uiState.filter.selectedTypes,
+                    onTypeToggle = onTypeToggle
+                )
             }
+        }
         }
         uiState.errorMessage?.let { message ->
             item {
@@ -386,7 +442,12 @@ private fun MeasurementsList(
             }
         }
         item {
-            SummarySection(summary = uiState.summary)
+            SummarySection(
+                summary = uiState.summary,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 24.dp, bottom = 16.dp)
+            )
         }
         if (uiState.groups.isEmpty() && !uiState.isLoading) {
             item {
@@ -428,7 +489,8 @@ private fun MeasurementsErrorCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        shape = InteractiveShape
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -450,12 +512,12 @@ private fun MeasurementsErrorCard(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onDismiss) {
+                TextButton(onClick = onDismiss, shape = InteractiveShape) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(text = stringResource(id = R.string.measure_error_dismiss))
                 }
-                TextButton(onClick = onRetry) {
+                TextButton(onClick = onRetry, shape = InteractiveShape) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(text = stringResource(id = R.string.measure_error_retry))
@@ -465,6 +527,7 @@ private fun MeasurementsErrorCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MeasurementsFab(
     connected: Boolean,
@@ -486,14 +549,23 @@ private fun MeasurementsFab(
                     )
                 },
                 onClick = onStartMeasurement,
+                shape = InteractiveShape,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
         }
-        FloatingActionButton(onClick = onAddManual) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(id = R.string.measure_action_add_manual)
-            )
+        PlainTooltipBox(tooltip = { Text(text = stringResource(id = R.string.measure_action_add_tooltip)) }) {
+            FloatingActionButton(
+                onClick = onAddManual,
+                shape = InteractiveShape,
+                modifier = Modifier
+                    .tooltipAnchor()
+                    .sizeIn(minWidth = 56.dp, minHeight = 56.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(id = R.string.measure_action_add_manual)
+                )
+            }
         }
     }
 }
@@ -506,16 +578,31 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
         MeasurementPeriod.Week,
         MeasurementPeriod.Month
     )
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(text = stringResource(id = R.string.measure_filters_period), style = MaterialTheme.typography.labelLarge)
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(top = 8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionTitle(text = stringResource(id = R.string.measure_filters_period))
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState())
+        ) {
             periods.forEachIndexed { index, period ->
                 SegmentedButton(
                     selected = selected::class == period::class,
                     onClick = { onPeriodSelected(period) },
-                    shape = SegmentedButtonDefaults.itemShape(index, periods.size)
+                    shape = SegmentedButtonDefaults.itemShape(index, periods.size, baseShape = InteractiveShape),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                        activeBorderColor = MaterialTheme.colorScheme.primary,
+                        inactiveContainerColor = Color.Transparent,
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                        inactiveBorderColor = MaterialTheme.colorScheme.outline
+                    )
                 ) {
-                    Text(text = stringResource(id = period.labelRes))
+                    Text(
+                        text = stringResource(id = period.labelRes),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
             }
             SegmentedButton(
@@ -526,9 +613,20 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
                     val end = custom?.end ?: LocalDate.now()
                     onPeriodSelected(MeasurementPeriod.Custom(start, end))
                 },
-                shape = SegmentedButtonDefaults.itemShape(periods.size, periods.size + 1)
+                shape = SegmentedButtonDefaults.itemShape(periods.size, periods.size + 1, baseShape = InteractiveShape),
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                    inactiveContainerColor = Color.Transparent,
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                    inactiveBorderColor = MaterialTheme.colorScheme.outline
+                )
             ) {
-                Text(text = stringResource(id = R.string.measure_period_custom))
+                Text(
+                    text = stringResource(id = R.string.measure_period_custom),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
         }
     }
@@ -537,8 +635,8 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (MeasurementType) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Text(text = stringResource(id = R.string.measure_filters_type), style = MaterialTheme.typography.labelLarge)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionTitle(text = stringResource(id = R.string.measure_filters_type))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -550,6 +648,20 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
                     selected = selected,
                     onClick = { onTypeToggle(type) },
                     label = { Text(text = stringResource(id = type.titleRes)) },
+                    shape = InteractiveShape,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = Color.Transparent,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        leadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        borderWidth = 1.dp
+                    ),
                     leadingIcon = {
                         if (selected) {
                             Icon(
@@ -566,59 +678,88 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SummarySection(summary: com.example.healthcodex.data.measurements.MeasurementSummary) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(text = stringResource(id = R.string.measure_summary_title), style = MaterialTheme.typography.titleMedium)
+private fun SummarySection(
+    summary: com.example.healthcodex.data.measurements.MeasurementSummary,
+    modifier: Modifier = Modifier
+) {
+    val noData = stringResource(id = R.string.measure_summary_no_data)
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionTitle(text = stringResource(id = R.string.measure_summary_title))
         FlowRow(
             modifier = Modifier.padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 2
         ) {
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_hr),
-                value = summary.averageHr?.let { String.format("%.0f", it) + " уд/мин" } ?: "—",
+                value = summary.averageHr?.let { value ->
+                    stringResource(id = R.string.measure_summary_unit_bpm, value.roundToInt())
+                } ?: noData,
                 color = Color(0xFFEF4444),
                 icon = Icons.Default.Favorite
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_steps),
-                value = Formatters.formatInt(summary.steps),
+                value = summary.steps?.let { count ->
+                    stringResource(
+                        id = R.string.measure_summary_unit_steps,
+                        Formatters.formatInt(count)
+                    )
+                } ?: noData,
                 color = Color(0xFF10B981),
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_calories),
-                value = Formatters.formatInt(summary.calories) + " ккал",
+                value = summary.calories?.let { total ->
+                    stringResource(
+                        id = R.string.measure_summary_unit_calories,
+                        Formatters.formatInt(total)
+                    )
+                } ?: noData,
                 color = Color(0xFFFB923C),
                 icon = Icons.Default.LocalFireDepartment
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_pressure),
-                value = summary.pressure?.let { "${it.first.toInt()}/${it.second.toInt()}" } ?: "—",
+                value = summary.pressure?.let { pair ->
+                    stringResource(
+                        id = R.string.measure_summary_unit_pressure,
+                        pair.first.roundToInt(),
+                        pair.second.roundToInt()
+                    )
+                } ?: noData,
                 color = Color(0xFF6366F1),
                 icon = Icons.Default.Bloodtype
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_weight_delta),
-                value = summary.weightDelta?.let { String.format("%+.1f кг", it) } ?: "—",
+                value = summary.weightDelta?.let { delta ->
+                    stringResource(id = R.string.measure_summary_unit_weight_delta, delta)
+                } ?: noData,
                 color = Color(0xFF3B82F6),
                 icon = Icons.Default.MonitorWeight
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_spo2),
-                value = summary.averageSpo2?.let { String.format("%.0f %%", it) } ?: "—",
+                value = summary.averageSpo2?.let { spo ->
+                    stringResource(id = R.string.measure_summary_unit_spo2, spo.roundToInt())
+                } ?: noData,
                 color = Color(0xFF14B8A6),
                 icon = Icons.Default.FavoriteBorder
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_sleep),
-                value = summary.sleepMinutes?.let { Formatters.formatDurationMinutes(it) } ?: "—",
+                value = summary.sleepMinutes?.let { Formatters.formatDurationMinutes(it) } ?: noData,
                 color = Color(0xFF6366F1),
                 icon = Icons.Default.Bedtime
             )
             SummaryTile(
                 title = stringResource(id = R.string.measure_summary_respiratory),
-                value = summary.respiratoryRate?.let { String.format("%.0f вдох/мин", it) } ?: "—",
+                value = summary.respiratoryRate?.let { rate ->
+                    stringResource(id = R.string.measure_summary_unit_respiratory, rate.roundToInt())
+                } ?: noData,
                 color = Color(0xFF22C55E),
                 icon = Icons.Default.Air
             )
@@ -630,24 +771,41 @@ private fun SummarySection(summary: com.example.healthcodex.data.measurements.Me
 @Composable
 private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     ElevatedCard(
-        modifier = Modifier.width(180.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.widthIn(min = 160.dp, max = 240.dp),
+        shape = InteractiveShape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(color.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(imageVector = icon, contentDescription = null, tint = color)
-                }
-                Text(text = title, style = MaterialTheme.typography.labelLarge)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(imageVector = icon, contentDescription = null, tint = color)
             }
-            Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -672,7 +830,7 @@ private fun MeasurementCard(
                 onClick = onClick,
                 onLongClick = { menuExpanded = true }
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = InteractiveShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -691,9 +849,19 @@ private fun MeasurementCard(
                     )
                 }
                 Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text(text = stringResource(id = entry.type.titleRes), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = stringResource(id = entry.type.titleRes),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = Formatters.formatInstant(entry.timestamp), style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            text = Formatters.formatInstant(entry.timestamp),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         AssistChip(onClick = {}, label = {
                             Text(
                                 text = stringResource(
@@ -703,20 +871,27 @@ private fun MeasurementCard(
                                     }
                                 )
                             )
-                        })
+                        }, shape = InteractiveShape)
                         AssistChip(onClick = {}, label = {
                             Text(text = stringResource(id = entry.confidence.titleRes))
-                        })
+                        }, shape = InteractiveShape)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = formatPrimaryValue(entry),
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     entry.details.secondaryValue?.let {
-                        Text(text = formatSecondaryValue(entry), style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = formatSecondaryValue(entry),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
                 IconButton(onClick = { menuExpanded = true }) {
@@ -739,7 +914,7 @@ private fun MeasurementCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     entry.tags.forEach { tag ->
-                        AssistChip(onClick = {}, label = { Text(tag) })
+                        AssistChip(onClick = {}, label = { Text(tag) }, shape = InteractiveShape)
                     }
                 }
             }
@@ -774,15 +949,18 @@ private fun MeasurementCard(
             title = { Text(stringResource(id = R.string.measure_delete_confirm_title)) },
             text = { Text(stringResource(id = R.string.measure_delete_confirm_message)) },
             confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    onDelete()
-                }) {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        onDelete()
+                    },
+                    shape = InteractiveShape
+                ) {
                     Text(text = stringResource(id = R.string.measure_delete_confirm_ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
+                TextButton(onClick = { confirmDelete = false }, shape = InteractiveShape) {
                     Text(text = stringResource(id = R.string.measure_delete_confirm_cancel))
                 }
             }
@@ -855,7 +1033,8 @@ private fun MeasurementsEmptyState(isSearch: Boolean) {
         Text(
             text = stringResource(id = R.string.measure_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -876,40 +1055,46 @@ private fun MeasurementsFilterSheet(
     val ranges = state.filter.ranges
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(text = stringResource(id = R.string.measure_sheet_title), style = MaterialTheme.typography.titleMedium)
-            Text(text = stringResource(id = R.string.measure_filters_period))
+            SectionTitle(text = stringResource(id = R.string.measure_sheet_title))
+            SectionTitle(text = stringResource(id = R.string.measure_filters_period))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(onClick = {
-                    val custom = state.filter.period as? MeasurementPeriod.Custom
-                    val start = custom?.start ?: LocalDate.now().minusDays(6)
-                    val end = custom?.end ?: LocalDate.now()
-                    onCustomPeriod(start, end)
-                }) {
+                TextButton(
+                    onClick = {
+                        val custom = state.filter.period as? MeasurementPeriod.Custom
+                        val start = custom?.start ?: LocalDate.now().minusDays(6)
+                        val end = custom?.end ?: LocalDate.now()
+                        onCustomPeriod(start, end)
+                    },
+                    shape = InteractiveShape
+                ) {
                     Text(text = stringResource(id = R.string.measure_sheet_custom_period))
                 }
             }
-            Text(text = stringResource(id = R.string.measure_sheet_source))
+            SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
             val sourceFilter = state.filter.source
             val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = sourceFilter is MeasurementSourceFilter.All,
                     onClick = { onSourceChange(MeasurementSourceFilter.All) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_all)) }
+                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_all)) },
+                    shape = InteractiveShape
                 )
                 FilterChip(
                     selected = selectedSource == MeasurementSource.DEVICE,
                     onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_device)) }
+                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_device)) },
+                    shape = InteractiveShape
                 )
                 FilterChip(
                     selected = selectedSource == MeasurementSource.MANUAL,
                     onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_manual)) }
+                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_manual)) },
+                    shape = InteractiveShape
                 )
             }
             if (state.availableDevices.isNotEmpty()) {
-                Text(text = stringResource(id = R.string.measure_sheet_device))
+                SectionTitle(text = stringResource(id = R.string.measure_sheet_device))
                 var expanded by remember { mutableStateOf(false) }
                 val selectedDevice = state.filter.deviceName.orEmpty()
                 OutlinedTextField(
@@ -956,9 +1141,9 @@ private fun MeasurementsFilterSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = state.filter.onlyAnomalies, onCheckedChange = { onToggleAnomaly() })
-                Text(text = stringResource(id = R.string.measure_sheet_anomaly))
+                SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
             }
-            Text(text = stringResource(id = R.string.measure_sheet_range_title), style = MaterialTheme.typography.titleSmall)
+            SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
             MeasurementType.values().forEach { type ->
                 val range = ranges[type]
                 var minText by rememberSaveable("min_${type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
@@ -999,8 +1184,8 @@ private fun MeasurementsFilterSheet(
             }
             HorizontalDivider()
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(onClick = onClear) { Text(text = stringResource(id = R.string.measure_sheet_clear)) }
-                TextButton(onClick = onDismiss) { Text(text = stringResource(id = R.string.measure_sheet_close)) }
+                TextButton(onClick = onClear, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_sheet_clear)) }
+                TextButton(onClick = onDismiss, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_sheet_close)) }
             }
         }
     }
@@ -1045,10 +1230,10 @@ private fun MeasurementEditorDialog(
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onSave) { Text(text = stringResource(id = R.string.measure_save)) }
+            TextButton(onClick = onSave, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(text = stringResource(id = R.string.measure_cancel)) }
+            TextButton(onClick = onDismiss, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_cancel)) }
         },
         title = {
             Text(
@@ -1234,7 +1419,8 @@ private fun SourceSelector(selected: MeasurementSource, onSelected: (Measurement
                         if (selected == source) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         }
-                    }
+                    },
+                    shape = InteractiveShape
                 )
             }
         }
@@ -1254,7 +1440,8 @@ private fun ConfidenceSelector(selected: MeasurementConfidence, onSelected: (Mea
                         if (selected == confidence) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         }
-                    }
+                    },
+                    shape = InteractiveShape
                 )
             }
         }
