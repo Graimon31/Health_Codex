@@ -5,9 +5,12 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,18 +22,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -47,8 +49,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +56,6 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -69,7 +68,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.tooltipAnchor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -84,6 +82,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -553,20 +555,18 @@ private fun MeasurementsFab(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
         }
-        PlainTooltipBox(tooltip = { Text(text = stringResource(id = R.string.measure_action_add_tooltip)) }) {
-            FloatingActionButton(
-                onClick = onAddManual,
-                shape = InteractiveShape,
-                modifier = Modifier
-                    .tooltipAnchor()
-                    .sizeIn(minWidth = 56.dp, minHeight = 56.dp)
-            ) {
+        ExtendedFloatingActionButton(
+            text = { Text(text = stringResource(id = R.string.measure_action_add_manual)) },
+            icon = {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(id = R.string.measure_action_add_manual)
+                    contentDescription = null
                 )
-            }
-        }
+            },
+            onClick = onAddManual,
+            shape = InteractiveShape,
+            modifier = Modifier.sizeIn(minWidth = 56.dp, minHeight = 56.dp)
+        )
     }
 }
 
@@ -644,34 +644,59 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
         ) {
             MeasurementType.values().forEach { type ->
                 val selected = selectedTypes.contains(type)
-                FilterChip(
+                MeasurementTypeChip(
+                    type = type,
                     selected = selected,
-                    onClick = { onTypeToggle(type) },
-                    label = { Text(text = stringResource(id = type.titleRes)) },
-                    shape = InteractiveShape,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = Color.Transparent,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        leadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        borderColor = MaterialTheme.colorScheme.outline,
-                        selectedBorderColor = MaterialTheme.colorScheme.primary,
-                        borderWidth = 1.dp
-                    ),
-                    leadingIcon = {
-                        if (selected) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null
-                            )
-                        }
-                    }
+                    onToggle = onTypeToggle
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MeasurementTypeChip(
+    type: MeasurementType,
+    selected: Boolean,
+    onToggle: (MeasurementType) -> Unit
+) {
+    val background = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val stateText = if (selected) {
+        stringResource(id = R.string.measure_type_selected_state)
+    } else {
+        stringResource(id = R.string.measure_type_unselected_state)
+    }
+
+    Surface(
+        shape = InteractiveShape,
+        color = background,
+        contentColor = contentColor,
+        border = BorderStroke(1.dp, borderColor),
+        tonalElevation = if (selected) 2.dp else 0.dp,
+        onClick = { onToggle(type) },
+        modifier = Modifier.semantics {
+            role = Role.Checkbox
+            this.selected = selected
+            stateDescription = stateText
+        }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (selected) {
+                Icon(imageVector = Icons.Default.Check, contentDescription = null)
+            }
+            Text(
+                text = stringResource(id = type.titleRes),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

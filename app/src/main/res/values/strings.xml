@@ -50,6 +50,8 @@
     <string name="measure_summary_unit_weight_delta">%1$+.1f кг</string>
     <string name="measure_summary_unit_spo2">%1$d%%</string>
     <string name="measure_summary_unit_respiratory">%1$d вдох/мин</string>
+    <string name="measure_type_selected_state">Тип выбран</string>
+    <string name="measure_type_unselected_state">Тип не выбран</string>
     <string name="measure_empty_search">Ничего не найдено</string>
     <string name="measure_empty_title">Нет измерений</string>
     <string name="measure_empty_subtitle">Добавьте запись вручную или подключите устройство</string>
