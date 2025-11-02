@@ -14,10 +14,14 @@ import com.example.healthcodex.data.profile.UserProfileConverters
     version = 3,
     exportSchema = false
 )
-@TypeConverters(CommonConverters::class, UserProfileConverters::class, MeasurementConverters::class)
+@TypeConverters(
+    CommonConverters::class,
+    UserProfileConverters::class,
+    MeasurementConverters::class
+)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun userProfileDao(): UserProfileDao
-    abstract fun measurementDao(): MeasurementDao
+    abstract fun userProfileDao(): com.example.healthcodex.data.db.UserProfileDao
+    abstract fun measurementDao(): com.example.healthcodex.data.db.MeasurementDao
 
     companion object {
         @Volatile
