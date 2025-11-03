@@ -65,6 +65,7 @@
     <string name="measure_sheet_device_all">Любое</string>
     <string name="measure_sheet_anomaly">Только аномальные</string>
     <string name="measure_sheet_range_title">Диапазоны значений</string>
+    <string name="measure_sheet_custom_period">Настроить период</string>
     <string name="measure_sheet_range_min">Мин.</string>
     <string name="measure_sheet_range_max">Макс.</string>
     <string name="measure_sheet_clear">Сбросить</string>
