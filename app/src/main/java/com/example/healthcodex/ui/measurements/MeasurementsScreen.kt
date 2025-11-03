@@ -105,6 +105,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -118,11 +119,13 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Tune
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.R
 import com.example.healthcodex.data.measurements.MeasurementConfidence
+import com.example.healthcodex.data.measurements.MeasurementFilter
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementPeriod
 import com.example.healthcodex.data.measurements.MeasurementSource
@@ -139,6 +142,7 @@ import kotlin.math.roundToInt
 
 private val InteractiveRadius = 12.dp
 private val InteractiveShape = RoundedCornerShape(InteractiveRadius)
+private val AllMeasurementTypes = MeasurementType.values().toSet()
 
 /**
  * Entry point composable that wires the view model with the screen.
@@ -259,6 +263,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             MeasurementsList(
                 uiState = uiState,
                 isSearchVisible = isSearchVisible,
+                onOpenFilters = { filterSheetVisible = true },
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
                 onEdit = { entry -> viewModel.openEditor(entry) },
                 onDelete = { entry -> viewModel.delete(entry) },
@@ -398,6 +403,7 @@ private fun MeasurementsTopBar(
 private fun MeasurementsList(
     uiState: MeasurementsUiState,
     isSearchVisible: Boolean,
+    onOpenFilters: () -> Unit,
     onOpenDetail: (MeasurementEntry) -> Unit,
     onEdit: (MeasurementEntry) -> Unit,
     onDelete: (MeasurementEntry) -> Unit,
@@ -419,6 +425,15 @@ private fun MeasurementsList(
                     onDismiss = onDismissError
                 )
             }
+        }
+        item {
+            FilterSummaryRow(
+                filter = uiState.filter,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp),
+                onOpenFilters = onOpenFilters
+            )
         }
         item {
             SummarySection(
@@ -504,6 +519,126 @@ private fun MeasurementsErrorCard(
             }
         }
     }
+}
+
+@Composable
+private fun FilterSummaryRow(
+    filter: MeasurementFilter,
+    modifier: Modifier = Modifier,
+    onOpenFilters: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+    val rangeCount = filter.ranges.values.count { it.min != null || it.max != null }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SectionTitle(text = stringResource(id = R.string.measure_filter_summary_title))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AssistChip(
+                onClick = onOpenFilters,
+                label = {
+                    Text(
+                        text = stringResource(
+                            id = R.string.measure_filter_summary_period,
+                            periodSummaryLabel(filter.period)
+                        )
+                    )
+                },
+                leadingIcon = { Icon(imageVector = Icons.Default.Schedule, contentDescription = null) },
+                shape = InteractiveShape
+            )
+            val typeLabel = when {
+                filter.selectedTypes.isEmpty() -> stringResource(id = R.string.measure_filter_summary_types_none)
+                filter.selectedTypes.size == AllMeasurementTypes.size -> stringResource(id = R.string.measure_filter_summary_types_all)
+                else -> stringResource(id = R.string.measure_filter_summary_types_count, filter.selectedTypes.size)
+            }
+            AssistChip(
+                onClick = onOpenFilters,
+                label = { Text(typeLabel) },
+                leadingIcon = { Icon(imageVector = Icons.Default.Check, contentDescription = null) },
+                shape = InteractiveShape
+            )
+            when (val source = filter.source) {
+                is MeasurementSourceFilter.Only -> {
+                    val (label, icon) = if (source.source == MeasurementSource.DEVICE) {
+                        stringResource(id = R.string.measure_filter_summary_source_device) to Icons.Default.Bluetooth
+                    } else {
+                        stringResource(id = R.string.measure_filter_summary_source_manual) to Icons.Default.Edit
+                    }
+                    AssistChip(
+                        onClick = onOpenFilters,
+                        label = { Text(label) },
+                        leadingIcon = { Icon(imageVector = icon, contentDescription = null) },
+                        shape = InteractiveShape
+                    )
+                }
+                else -> Unit
+            }
+            filter.deviceName?.takeIf { it.isNotBlank() }?.let { name ->
+                AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_device, name)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+            }
+            if (filter.onlyAnomalies) {
+                AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_anomaly)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.ErrorOutline, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+            }
+            if (rangeCount > 0) {
+                AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_ranges, rangeCount)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Tune, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+            }
+            if (filter.query.isNotBlank()) {
+                val trimmedQuery = filter.query.trim()
+                val displayQuery = if (trimmedQuery.length > 20) {
+                    trimmedQuery.take(20) + "…"
+                } else {
+                    trimmedQuery
+                }
+                AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_query, displayQuery)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+            }
+            AssistChip(
+                onClick = onOpenFilters,
+                label = { Text(stringResource(id = R.string.measure_filter_summary_open)) },
+                leadingIcon = { Icon(imageVector = Icons.Default.FilterList, contentDescription = null) },
+                shape = InteractiveShape
+            )
+        }
+    }
+}
+
+@Composable
+private fun periodSummaryLabel(period: MeasurementPeriod): String = when (period) {
+    MeasurementPeriod.Today -> stringResource(id = R.string.measure_period_today)
+    MeasurementPeriod.Week -> stringResource(id = R.string.measure_period_week)
+    MeasurementPeriod.Month -> stringResource(id = R.string.measure_period_month)
+    is MeasurementPeriod.Custom -> stringResource(
+        id = R.string.measure_filter_summary_custom_period,
+        Formatters.formatDate(period.start),
+        Formatters.formatDate(period.end)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
