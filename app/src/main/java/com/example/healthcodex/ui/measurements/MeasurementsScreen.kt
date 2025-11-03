@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -68,6 +69,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -822,102 +824,164 @@ private fun SummarySection(
     modifier: Modifier = Modifier
 ) {
     val noData = stringResource(id = R.string.measure_summary_no_data)
+    val items = listOf(
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_hr),
+            value = summary.averageHr?.let { value ->
+                stringResource(id = R.string.measure_summary_unit_bpm, value.roundToInt())
+            } ?: noData,
+            hasData = summary.averageHr != null,
+            icon = Icons.Default.Favorite,
+            accentColor = MaterialTheme.colorScheme.error
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_steps),
+            value = summary.steps?.let { count ->
+                stringResource(
+                    id = R.string.measure_summary_unit_steps,
+                    Formatters.formatInt(count)
+                )
+            } ?: noData,
+            hasData = summary.steps != null,
+            icon = Icons.AutoMirrored.Filled.DirectionsWalk,
+            accentColor = MaterialTheme.colorScheme.secondary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_calories),
+            value = summary.calories?.let { total ->
+                stringResource(
+                    id = R.string.measure_summary_unit_calories,
+                    Formatters.formatInt(total)
+                )
+            } ?: noData,
+            hasData = summary.calories != null,
+            icon = Icons.Default.LocalFireDepartment,
+            accentColor = MaterialTheme.colorScheme.tertiary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_pressure),
+            value = summary.pressure?.let { pair ->
+                stringResource(
+                    id = R.string.measure_summary_unit_pressure,
+                    pair.first.roundToInt(),
+                    pair.second.roundToInt()
+                )
+            } ?: noData,
+            hasData = summary.pressure != null,
+            icon = Icons.Default.Bloodtype,
+            accentColor = MaterialTheme.colorScheme.primary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_weight_delta),
+            value = summary.weightDelta?.let { delta ->
+                stringResource(id = R.string.measure_summary_unit_weight_delta, delta)
+            } ?: noData,
+            hasData = summary.weightDelta != null,
+            icon = Icons.Default.MonitorWeight,
+            accentColor = MaterialTheme.colorScheme.primary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_spo2),
+            value = summary.averageSpo2?.let { spo ->
+                stringResource(id = R.string.measure_summary_unit_spo2, spo.roundToInt())
+            } ?: noData,
+            hasData = summary.averageSpo2 != null,
+            icon = Icons.Default.FavoriteBorder,
+            accentColor = MaterialTheme.colorScheme.secondary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_sleep),
+            value = summary.sleepMinutes?.let { Formatters.formatDurationMinutes(it) } ?: noData,
+            hasData = summary.sleepMinutes != null,
+            icon = Icons.Default.Bedtime,
+            accentColor = MaterialTheme.colorScheme.tertiary
+        ),
+        SummaryTileData(
+            title = stringResource(id = R.string.measure_summary_respiratory),
+            value = summary.respiratoryRate?.let { rate ->
+                stringResource(id = R.string.measure_summary_unit_respiratory, rate.roundToInt())
+            } ?: noData,
+            hasData = summary.respiratoryRate != null,
+            icon = Icons.Default.Air,
+            accentColor = MaterialTheme.colorScheme.secondary
+        )
+    )
+
     Column(modifier = modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_summary_title))
-        FlowRow(
-            modifier = Modifier.padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            maxItemsInEachRow = 2
-        ) {
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_hr),
-                value = summary.averageHr?.let { value ->
-                    stringResource(id = R.string.measure_summary_unit_bpm, value.roundToInt())
-                } ?: noData,
-                color = Color(0xFFEF4444),
-                icon = Icons.Default.Favorite
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_steps),
-                value = summary.steps?.let { count ->
-                    stringResource(
-                        id = R.string.measure_summary_unit_steps,
-                        Formatters.formatInt(count)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val spacing = 8.dp
+            val columns = if (maxWidth < 360.dp) 1 else 2
+            val itemWidth = remember(maxWidth, columns) {
+                if (columns == 1) maxWidth else (maxWidth - spacing) / columns
+            }
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalArrangement = Arrangement.spacedBy(spacing),
+                maxItemsInEachRow = columns
+            ) {
+                items.forEachIndexed { index, tile ->
+                    SummaryTile(
+                        modifier = Modifier.width(itemWidth),
+                        title = tile.title,
+                        value = tile.value,
+                        icon = tile.icon,
+                        accentColor = tile.accentColor,
+                        hasData = tile.hasData,
+                        index = index
                     )
-                } ?: noData,
-                color = Color(0xFF10B981),
-                icon = Icons.AutoMirrored.Filled.DirectionsWalk
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_calories),
-                value = summary.calories?.let { total ->
-                    stringResource(
-                        id = R.string.measure_summary_unit_calories,
-                        Formatters.formatInt(total)
-                    )
-                } ?: noData,
-                color = Color(0xFFFB923C),
-                icon = Icons.Default.LocalFireDepartment
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_pressure),
-                value = summary.pressure?.let { pair ->
-                    stringResource(
-                        id = R.string.measure_summary_unit_pressure,
-                        pair.first.roundToInt(),
-                        pair.second.roundToInt()
-                    )
-                } ?: noData,
-                color = Color(0xFF6366F1),
-                icon = Icons.Default.Bloodtype
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_weight_delta),
-                value = summary.weightDelta?.let { delta ->
-                    stringResource(id = R.string.measure_summary_unit_weight_delta, delta)
-                } ?: noData,
-                color = Color(0xFF3B82F6),
-                icon = Icons.Default.MonitorWeight
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_spo2),
-                value = summary.averageSpo2?.let { spo ->
-                    stringResource(id = R.string.measure_summary_unit_spo2, spo.roundToInt())
-                } ?: noData,
-                color = Color(0xFF14B8A6),
-                icon = Icons.Default.FavoriteBorder
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_sleep),
-                value = summary.sleepMinutes?.let { Formatters.formatDurationMinutes(it) } ?: noData,
-                color = Color(0xFF6366F1),
-                icon = Icons.Default.Bedtime
-            )
-            SummaryTile(
-                title = stringResource(id = R.string.measure_summary_respiratory),
-                value = summary.respiratoryRate?.let { rate ->
-                    stringResource(id = R.string.measure_summary_unit_respiratory, rate.roundToInt())
-                } ?: noData,
-                color = Color(0xFF22C55E),
-                icon = Icons.Default.Air
-            )
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private data class SummaryTileData(
+    val title: String,
+    val value: String,
+    val hasData: Boolean,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accentColor: Color
+)
+
 @Composable
-private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    ElevatedCard(
-        modifier = Modifier.widthIn(min = 160.dp, max = 240.dp),
+private fun SummaryTile(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    hasData: Boolean,
+    index: Int,
+    modifier: Modifier = Modifier
+) {
+    val baseContainer = if (index % 2 == 0) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+    }
+    val containerColor = if (hasData) {
+        MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp)
+    } else {
+        baseContainer
+    }
+    val iconTint = if (hasData) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
+    val valueColor = if (hasData) accentColor else MaterialTheme.colorScheme.onSurface
+
+    Surface(
+        modifier = modifier.heightIn(min = 60.dp),
         shape = InteractiveShape,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        tonalElevation = if (hasData) 4.dp else 1.dp,
+        shadowElevation = 0.dp,
+        color = containerColor,
+        border = if (hasData) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -925,26 +989,27 @@ private fun SummaryTile(title: String, value: String, color: Color, icon: androi
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(color.copy(alpha = 0.15f)),
+                    .background(iconTint.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = color)
+                Icon(imageVector = icon, contentDescription = null, tint = iconTint)
             }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = valueColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
