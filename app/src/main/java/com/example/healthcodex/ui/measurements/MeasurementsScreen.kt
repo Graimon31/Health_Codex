@@ -178,6 +178,8 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         MeasurementsFilterSheet(
             state = uiState,
             onDismiss = { filterSheetVisible = false },
+            onPeriodSelected = { viewModel.setPeriod(it) },
+            onTypeToggle = { viewModel.toggleType(it) },
             onSourceChange = { viewModel.setSourceFilter(it) },
             onDeviceChange = { viewModel.setDeviceFilter(it) },
             onToggleAnomaly = { viewModel.toggleAnomalies() },
@@ -257,9 +259,6 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             MeasurementsList(
                 uiState = uiState,
                 isSearchVisible = isSearchVisible,
-                backgroundColor = screenBackground,
-                onPeriodSelected = { viewModel.setPeriod(it) },
-                onTypeToggle = { viewModel.toggleType(it) },
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
                 onEdit = { entry -> viewModel.openEditor(entry) },
                 onDelete = { entry -> viewModel.delete(entry) },
@@ -399,9 +398,6 @@ private fun MeasurementsTopBar(
 private fun MeasurementsList(
     uiState: MeasurementsUiState,
     isSearchVisible: Boolean,
-    backgroundColor: Color,
-    onPeriodSelected: (MeasurementPeriod) -> Unit,
-    onTypeToggle: (MeasurementType) -> Unit,
     onOpenDetail: (MeasurementEntry) -> Unit,
     onEdit: (MeasurementEntry) -> Unit,
     onDelete: (MeasurementEntry) -> Unit,
@@ -415,22 +411,6 @@ private fun MeasurementsList(
         state = listState,
         contentPadding = PaddingValues(bottom = 120.dp)
     ) {
-        stickyHeader {
-            Surface(color = backgroundColor) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    FilterPanel(
-                        selectedPeriod = uiState.filter.period,
-                        onPeriodSelected = onPeriodSelected,
-                        selectedTypes = uiState.filter.selectedTypes,
-                        onTypeToggle = onTypeToggle
-                    )
-                }
-            }
-        }
         uiState.errorMessage?.let { message ->
             item {
                 MeasurementsErrorCard(
@@ -564,41 +544,6 @@ private fun MeasurementsFab(
             shape = InteractiveShape,
             modifier = Modifier.sizeIn(minWidth = 56.dp, minHeight = 56.dp)
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FilterPanel(
-    selectedPeriod: MeasurementPeriod,
-    onPeriodSelected: (MeasurementPeriod) -> Unit,
-    selectedTypes: Set<MeasurementType>,
-    onTypeToggle: (MeasurementType) -> Unit
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = InteractiveShape,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            PeriodSelector(
-                selected = selectedPeriod,
-                onPeriodSelected = onPeriodSelected
-            )
-            TypeSelector(
-                selectedTypes = selectedTypes,
-                onTypeToggle = onTypeToggle
-            )
-        }
     }
 }
 
@@ -1103,6 +1048,8 @@ private fun MeasurementsEmptyState(isSearch: Boolean) {
 private fun MeasurementsFilterSheet(
     state: MeasurementsUiState,
     onDismiss: () -> Unit,
+    onPeriodSelected: (MeasurementPeriod) -> Unit,
+    onTypeToggle: (MeasurementType) -> Unit,
     onSourceChange: (MeasurementSourceFilter) -> Unit,
     onDeviceChange: (String?) -> Unit,
     onToggleAnomaly: () -> Unit,
@@ -1113,22 +1060,41 @@ private fun MeasurementsFilterSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val ranges = state.filter.ranges
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             SectionTitle(text = stringResource(id = R.string.measure_sheet_title))
-            SectionTitle(text = stringResource(id = R.string.measure_filters_period))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(
-                    onClick = {
-                        val custom = state.filter.period as? MeasurementPeriod.Custom
-                        val start = custom?.start ?: LocalDate.now().minusDays(6)
-                        val end = custom?.end ?: LocalDate.now()
-                        onCustomPeriod(start, end)
-                    },
-                    shape = InteractiveShape
-                ) {
-                    Text(text = stringResource(id = R.string.measure_sheet_custom_period))
+            PeriodSelector(
+                selected = state.filter.period,
+                onPeriodSelected = {
+                    onPeriodSelected(it)
+                    if (it is MeasurementPeriod.Custom) {
+                        onCustomPeriod(it.start, it.end)
+                    }
+                }
+            )
+            val customPeriod = state.filter.period as? MeasurementPeriod.Custom
+            if (customPeriod != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DateField(
+                        label = stringResource(id = R.string.measure_field_start_date),
+                        date = customPeriod.start,
+                        onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
+                    )
+                    DateField(
+                        label = stringResource(id = R.string.measure_field_end_date),
+                        date = customPeriod.end,
+                        onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
+                    )
                 }
             }
+            TypeSelector(
+                selectedTypes = state.filter.selectedTypes,
+                onTypeToggle = onTypeToggle
+            )
             SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
             val sourceFilter = state.filter.source
             val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source

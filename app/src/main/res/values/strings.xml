@@ -69,7 +69,6 @@
     <string name="measure_sheet_range_max">Макс.</string>
     <string name="measure_sheet_clear">Сбросить</string>
     <string name="measure_sheet_close">Закрыть</string>
-    <string name="measure_sheet_custom_period">Настроить диапазон</string>
     <string name="measure_editor_title_new">Новая запись</string>
     <string name="measure_editor_title_edit">Редактирование записи</string>
     <string name="measure_save">Сохранить</string>
