@@ -712,7 +712,7 @@ private fun MeasurementTypeChip(
         tonalElevation = if (selected) 2.dp else 0.dp,
         onClick = { onToggle(type) },
         modifier = Modifier.semantics {
-            role = Role.Checkbox
+            this.role = Role.Checkbox
             this.selected = selected
             stateDescription = stateText
         }
