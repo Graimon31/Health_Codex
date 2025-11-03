@@ -417,7 +417,7 @@ private fun MeasurementsList(
     ) {
         stickyHeader {
             Surface(color = backgroundColor) {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -705,17 +705,17 @@ private fun MeasurementTypeChip(
     }
 
     Surface(
-        shape = InteractiveShape,
-        color = background,
-        contentColor = contentColor,
-        border = BorderStroke(1.dp, borderColor),
-        tonalElevation = if (selected) 2.dp else 0.dp,
         onClick = { onToggle(type) },
         modifier = Modifier.semantics {
             this.role = Role.Checkbox
             this.selected = selected
             stateDescription = stateText
-        }
+        },
+        shape = InteractiveShape,
+        color = background,
+        contentColor = contentColor,
+        border = BorderStroke(1.dp, borderColor),
+        tonalElevation = if (selected) 2.dp else 0.dp
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
