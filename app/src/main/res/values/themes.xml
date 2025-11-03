@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme using Material3 DayNight without an action bar. -->
+    <style name="Theme.HealthCodex" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Use the surface color so status bar icons remain visible on light backgrounds. -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <!-- Request dark status bar icons for the light theme variant. -->
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
