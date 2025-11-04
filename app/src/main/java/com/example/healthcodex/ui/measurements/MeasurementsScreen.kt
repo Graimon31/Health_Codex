@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
@@ -33,7 +34,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -1398,25 +1398,23 @@ private fun MeasurementsFilterSheet(
     val filter = state.filter
     val customPeriod = filter.period as? MeasurementPeriod.Custom
     val availableDevices = state.connectedDevices
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
+                .fillMaxWidth(),
+            state = listState,
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 24.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
+            item {
                 Text(
                     text = stringResource(id = R.string.measure_sheet_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold
                 )
+            }
+            item {
                 PeriodSelector(
                     selected = filter.period,
                     onPeriodSelected = {
@@ -1426,28 +1424,36 @@ private fun MeasurementsFilterSheet(
                         }
                     }
                 )
-                customPeriod?.let { period ->
+            }
+            if (customPeriod != null) {
+                item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         DateField(
                             label = stringResource(id = R.string.measure_field_start_date),
-                            date = period.start,
-                            onDateSelected = { newStart -> onCustomPeriod(newStart, period.end) }
+                            date = customPeriod.start,
+                            onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
                         )
                         DateField(
                             label = stringResource(id = R.string.measure_field_end_date),
-                            date = period.end,
-                            onDateSelected = { newEnd -> onCustomPeriod(period.start, newEnd) }
+                            date = customPeriod.end,
+                            onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
                         )
                     }
                 }
+            }
+            item {
                 TypeSelector(
                     selectedTypes = filter.selectedTypes,
                     onTypeToggle = onTypeToggle
                 )
+            }
+            item {
                 DeviceTypeSelector(
                     selected = filter.deviceType,
                     onSelected = onDeviceTypeChange
                 )
+            }
+            item {
                 val sourceFilter = filter.source
                 val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1476,6 +1482,8 @@ private fun MeasurementsFilterSheet(
                         )
                     }
                 }
+            }
+            item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionTitle(text = stringResource(id = R.string.measure_sheet_anomaly_title))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1487,6 +1495,8 @@ private fun MeasurementsFilterSheet(
                     }
                     SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly_hint))
                 }
+            }
+            item {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
                     MeasurementType.values().forEach { type ->
@@ -1539,36 +1549,40 @@ private fun MeasurementsFilterSheet(
                     }
                 }
             }
-            BluetoothDevicesSection(
-                devices = availableDevices,
-                selectedId = filter.deviceId,
-                selectedName = filter.deviceName,
-                deviceFilter = filter.deviceType,
-                sourceFilter = filter.source,
-                onDeviceSelected = onDeviceChange,
-                onAddDevice = onAddDevice
-            )
-            HorizontalDivider()
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            item {
+                BluetoothDevicesSection(
+                    devices = availableDevices,
+                    selectedId = filter.deviceId,
+                    selectedName = filter.deviceName,
+                    deviceFilter = filter.deviceType,
+                    sourceFilter = filter.source,
+                    onDeviceSelected = onDeviceChange,
+                    onAddDevice = onAddDevice
+                )
+            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+        HorizontalDivider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            TextButton(
+                onClick = onClear,
+                shape = InteractiveShape,
+                modifier = Modifier.weight(1f)
             ) {
-                TextButton(
-                    onClick = onClear,
-                    shape = InteractiveShape,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = stringResource(id = R.string.measure_sheet_clear))
-                }
-                Button(
-                    onClick = onDismiss,
-                    shape = InteractiveShape,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = stringResource(id = R.string.measure_sheet_apply))
-                }
+                Text(text = stringResource(id = R.string.measure_sheet_clear))
+            }
+            Button(
+                onClick = onDismiss,
+                shape = InteractiveShape,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(text = stringResource(id = R.string.measure_sheet_apply))
             }
         }
     }
