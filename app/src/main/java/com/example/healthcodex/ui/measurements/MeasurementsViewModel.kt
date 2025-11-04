@@ -6,8 +6,11 @@ import com.example.healthcodex.HealthCodexApp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.healthcodex.data.measurements.ConnectedDevice
+import com.example.healthcodex.data.measurements.DeviceTypeFilter
 import com.example.healthcodex.data.measurements.MeasurementConfidence
 import com.example.healthcodex.data.measurements.MeasurementDetails
+import com.example.healthcodex.data.measurements.MeasurementDeviceType
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementFilter
 import com.example.healthcodex.data.measurements.MeasurementPeriod
@@ -56,6 +59,7 @@ class MeasurementsViewModel(
     init {
         observeMeasurements()
         observeBleStatus()
+        observeConnectedDevices()
     }
 
     private fun observeMeasurements() {
@@ -93,16 +97,12 @@ class MeasurementsViewModel(
                     )
                 }
             }.collect { collection ->
-                val devices = collection.raw.mapNotNull { it.deviceName?.takeIf(String::isNotBlank) }
-                    .distinct()
-                    .sorted()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         groups = collection.groups,
                         summary = collection.summary,
                         filter = collection.filter,
-                        availableDevices = devices,
                         filteredEntries = collection.filtered,
                         errorMessage = null
                     )
@@ -119,6 +119,25 @@ class MeasurementsViewModel(
                         bleConnected = !profile?.bleDeviceAddress.isNullOrBlank(),
                         bleDeviceName = profile?.bleDeviceName
                     )
+                }
+            }
+        }
+    }
+
+    private fun observeConnectedDevices() {
+        viewModelScope.launch {
+            repository.connectedDevices.collect { devices ->
+                val sorted = devices.sortedBy { it.name.lowercase() }
+                filterState.update { filter ->
+                    val selected = filter.deviceId?.let { id -> sorted.firstOrNull { it.id == id } }
+                    when {
+                        filter.deviceId != null && selected == null -> filter.copy(deviceId = null, deviceName = null)
+                        selected != null && filter.deviceName != selected.name -> filter.copy(deviceName = selected.name)
+                        else -> filter
+                    }
+                }
+                _uiState.update {
+                    it.copy(connectedDevices = sorted)
                 }
             }
         }
@@ -153,8 +172,31 @@ class MeasurementsViewModel(
         filterState.value = filterState.value.copy(source = filter)
     }
 
-    fun setDeviceFilter(deviceName: String?) {
-        filterState.value = filterState.value.copy(deviceName = deviceName)
+    fun setDeviceFilter(deviceId: Long?) {
+        val devices = _uiState.value.connectedDevices
+        val selected = devices.firstOrNull { it.id == deviceId }
+        val newSource = if (deviceId != null) {
+            MeasurementSourceFilter.Only(MeasurementSource.DEVICE)
+        } else {
+            MeasurementSourceFilter.All
+        }
+        filterState.value = filterState.value.copy(
+            deviceId = selected?.id,
+            deviceName = selected?.name,
+            source = newSource
+        )
+    }
+
+    fun setDeviceTypeFilter(filter: DeviceTypeFilter) {
+        val devices = _uiState.value.connectedDevices
+        val current = filterState.value
+        val matching = current.deviceId?.let { id -> devices.firstOrNull { it.id == id } }
+        val retainsSelection = matching != null && matchesType(matching, filter)
+        filterState.value = current.copy(
+            deviceType = filter,
+            deviceId = if (retainsSelection) matching!!.id else null,
+            deviceName = if (retainsSelection) matching!!.name else null
+        )
     }
 
     fun toggleAnomalies() {
@@ -163,6 +205,12 @@ class MeasurementsViewModel(
 
     fun updateQuery(query: String) {
         filterState.value = filterState.value.copy(query = query)
+    }
+
+    fun showAddDeviceHint() {
+        viewModelScope.launch {
+            _events.emit(MeasurementsEvent.ShowMessage("Подключение устройств доступно в разделе \"Профиль\""))
+        }
     }
 
     fun setRange(type: MeasurementType, min: Double?, max: Double?) {
@@ -241,7 +289,19 @@ class MeasurementsViewModel(
                 MeasurementSourceFilter.All -> true
                 is MeasurementSourceFilter.Only -> entry.source == src.source
             }
-            val matchesDevice = filter.deviceName.isNullOrBlank() || entry.deviceName == filter.deviceName
+            val knownDevices = _uiState.value.connectedDevices
+            val matchesDeviceType = when (filter.deviceType) {
+                DeviceTypeFilter.All -> true
+                DeviceTypeFilter.Wearable -> entryMatchesType(entry, MeasurementDeviceType.WEARABLE, knownDevices)
+                DeviceTypeFilter.NonWearable -> entryMatchesType(entry, MeasurementDeviceType.NON_WEARABLE, knownDevices)
+            }
+            val matchesDevice = when {
+                filter.deviceId != null ->
+                    entry.deviceId == filter.deviceId ||
+                        (filter.deviceName != null && entry.deviceName == filter.deviceName)
+                filter.deviceName != null -> entry.deviceName == filter.deviceName
+                else -> true
+            }
             val matchesQuery = filter.query.isBlank() || entry.note?.contains(filter.query, ignoreCase = true) == true || entry.type.name.contains(filter.query, ignoreCase = true)
             val matchesAnomaly = !filter.onlyAnomalies || Validation.isAnomalous(entry)
             val matchesRange = filter.ranges[entry.type]?.let { range ->
@@ -250,7 +310,32 @@ class MeasurementsViewModel(
                 val maxOk = range.max?.let { max -> value?.let { it <= max } ?: false } ?: true
                 minOk && maxOk
             } ?: true
-            matchesPeriod && matchesType && matchesSource && matchesDevice && matchesQuery && matchesAnomaly && matchesRange
+            matchesPeriod && matchesType && matchesSource && matchesDeviceType && matchesDevice && matchesQuery && matchesAnomaly && matchesRange
+        }
+    }
+
+    private fun matchesType(device: ConnectedDevice, filter: DeviceTypeFilter): Boolean = when (filter) {
+        DeviceTypeFilter.All -> true
+        DeviceTypeFilter.Wearable -> device.type == MeasurementDeviceType.WEARABLE
+        DeviceTypeFilter.NonWearable -> device.type == MeasurementDeviceType.NON_WEARABLE
+    }
+
+    private fun entryMatchesType(
+        entry: MeasurementEntry,
+        expected: MeasurementDeviceType,
+        knownDevices: List<ConnectedDevice>
+    ): Boolean {
+        return when (entry.deviceType) {
+            expected -> true
+            null -> {
+                val deviceName = entry.deviceName
+                if (deviceName != null) {
+                    knownDevices.firstOrNull { it.name == deviceName }?.type == expected
+                } else {
+                    false
+                }
+            }
+            else -> false
         }
     }
 
@@ -334,7 +419,7 @@ data class MeasurementsUiState(
     val filter: MeasurementFilter = MeasurementFilter(),
     val bleConnected: Boolean = false,
     val bleDeviceName: String? = null,
-    val availableDevices: List<String> = emptyList(),
+    val connectedDevices: List<ConnectedDevice> = emptyList(),
     val filteredEntries: List<MeasurementEntry> = emptyList(),
     val errorMessage: String? = null
 )

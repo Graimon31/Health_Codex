@@ -106,7 +106,9 @@ import androidx.compose.material.icons.filled.Bloodtype
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DevicesOther
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -114,6 +116,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.MoreVert
@@ -123,11 +126,15 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Watch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.R
+import com.example.healthcodex.data.measurements.ConnectedDevice
+import com.example.healthcodex.data.measurements.DeviceTypeFilter
 import com.example.healthcodex.data.measurements.MeasurementConfidence
+import com.example.healthcodex.data.measurements.MeasurementDeviceType
 import com.example.healthcodex.data.measurements.MeasurementFilter
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementPeriod
@@ -188,11 +195,13 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             onPeriodSelected = { viewModel.setPeriod(it) },
             onTypeToggle = { viewModel.toggleType(it) },
             onSourceChange = { viewModel.setSourceFilter(it) },
+            onDeviceTypeChange = { viewModel.setDeviceTypeFilter(it) },
             onDeviceChange = { viewModel.setDeviceFilter(it) },
             onToggleAnomaly = { viewModel.toggleAnomalies() },
             onRangeChange = { type, min, max -> viewModel.setRange(type, min, max) },
             onClear = { viewModel.clearFilters() },
-            onCustomPeriod = { start, end -> viewModel.setCustomPeriod(start, end) }
+            onCustomPeriod = { start, end -> viewModel.setCustomPeriod(start, end) },
+            onAddDevice = { viewModel.showAddDeviceHint() }
         )
     }
 
@@ -432,6 +441,7 @@ private fun MeasurementsList(
         item {
             FilterSummaryRow(
                 filter = uiState.filter,
+                connectedDevices = uiState.connectedDevices,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp),
@@ -527,11 +537,15 @@ private fun MeasurementsErrorCard(
 @Composable
 private fun FilterSummaryRow(
     filter: MeasurementFilter,
+    connectedDevices: List<ConnectedDevice>,
     modifier: Modifier = Modifier,
     onOpenFilters: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val rangeCount = filter.ranges.values.count { it.min != null || it.max != null }
+    val deviceLabel = filter.deviceId?.let { id ->
+        connectedDevices.firstOrNull { it.id == id }?.name
+    } ?: filter.deviceName
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -568,6 +582,21 @@ private fun FilterSummaryRow(
                 leadingIcon = { Icon(imageVector = Icons.Default.Check, contentDescription = null) },
                 shape = InteractiveShape
             )
+            when (filter.deviceType) {
+                DeviceTypeFilter.All -> Unit
+                DeviceTypeFilter.Wearable -> AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_wearable)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Watch, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+                DeviceTypeFilter.NonWearable -> AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_non_wearable)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.DevicesOther, contentDescription = null) },
+                    shape = InteractiveShape
+                )
+            }
             when (val source = filter.source) {
                 is MeasurementSourceFilter.Only -> {
                     val (label, icon) = if (source.source == MeasurementSource.DEVICE) {
@@ -584,7 +613,7 @@ private fun FilterSummaryRow(
                 }
                 else -> Unit
             }
-            filter.deviceName?.takeIf { it.isNotBlank() }?.let { name ->
+            deviceLabel?.takeIf { it.isNotBlank() }?.let { name ->
                 AssistChip(
                     onClick = onOpenFilters,
                     label = { Text(stringResource(id = R.string.measure_filter_summary_device, name)) },
@@ -760,6 +789,46 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
                     selected = selected,
                     onToggle = onTypeToggle
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DeviceTypeSelector(selected: DeviceTypeFilter, onSelected: (DeviceTypeFilter) -> Unit) {
+    val entries = listOf(
+        DeviceTypeFilter.All to stringResource(id = R.string.measure_sheet_device_type_all),
+        DeviceTypeFilter.Wearable to stringResource(id = R.string.measure_sheet_device_type_wearable),
+        DeviceTypeFilter.NonWearable to stringResource(id = R.string.measure_sheet_device_type_non_wearable)
+    )
+    val segmentedColors = SegmentedButtonDefaults.colors(
+        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        activeBorderColor = MaterialTheme.colorScheme.secondary,
+        inactiveContainerColor = Color.Transparent,
+        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+        inactiveBorderColor = MaterialTheme.colorScheme.outline
+    )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionTitle(text = stringResource(id = R.string.measure_sheet_device_type_title))
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .horizontalScroll(rememberScrollState())
+        ) {
+            entries.forEachIndexed { index, (value, label) ->
+                SegmentedButton(
+                    selected = selected::class == value::class,
+                    onClick = { onSelected(value) },
+                    shape = SegmentedButtonDefaults.itemShape(index, entries.size, baseShape = InteractiveShape),
+                    colors = segmentedColors
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
             }
         }
     }
@@ -1114,7 +1183,10 @@ private fun MeasurementCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Text(
                             text = Formatters.formatInstant(entry.timestamp),
                             style = MaterialTheme.typography.labelMedium,
@@ -1134,6 +1206,12 @@ private fun MeasurementCard(
                         AssistChip(onClick = {}, label = {
                             Text(text = stringResource(id = entry.confidence.titleRes))
                         }, shape = InteractiveShape)
+                        if (!entry.deviceName.isNullOrBlank() || entry.deviceType != null) {
+                            DeviceBadge(
+                                label = entry.deviceName ?: stringResource(id = R.string.measure_sheet_device_all),
+                                type = entry.deviceType
+                            )
+                        }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -1306,14 +1384,18 @@ private fun MeasurementsFilterSheet(
     onPeriodSelected: (MeasurementPeriod) -> Unit,
     onTypeToggle: (MeasurementType) -> Unit,
     onSourceChange: (MeasurementSourceFilter) -> Unit,
-    onDeviceChange: (String?) -> Unit,
+    onDeviceTypeChange: (DeviceTypeFilter) -> Unit,
+    onDeviceChange: (Long?) -> Unit,
     onToggleAnomaly: () -> Unit,
     onRangeChange: (MeasurementType, Double?, Double?) -> Unit,
     onClear: () -> Unit,
-    onCustomPeriod: (LocalDate, LocalDate) -> Unit
+    onCustomPeriod: (LocalDate, LocalDate) -> Unit,
+    onAddDevice: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val ranges = state.filter.ranges
+    val filter = state.filter
+    val customPeriod = filter.period as? MeasurementPeriod.Custom
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -1329,7 +1411,7 @@ private fun MeasurementsFilterSheet(
                     fontWeight = FontWeight.SemiBold
                 )
                 PeriodSelector(
-                    selected = state.filter.period,
+                    selected = filter.period,
                     onPeriodSelected = {
                         onPeriodSelected(it)
                         if (it is MeasurementPeriod.Custom) {
@@ -1337,26 +1419,29 @@ private fun MeasurementsFilterSheet(
                         }
                     }
                 )
-                val customPeriod = state.filter.period as? MeasurementPeriod.Custom
-                if (customPeriod != null) {
+                customPeriod?.let { period ->
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         DateField(
                             label = stringResource(id = R.string.measure_field_start_date),
-                            date = customPeriod.start,
-                            onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
+                            date = period.start,
+                            onDateSelected = { newStart -> onCustomPeriod(newStart, period.end) }
                         )
                         DateField(
                             label = stringResource(id = R.string.measure_field_end_date),
-                            date = customPeriod.end,
-                            onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
+                            date = period.end,
+                            onDateSelected = { newEnd -> onCustomPeriod(period.start, newEnd) }
                         )
                     }
                 }
                 TypeSelector(
-                    selectedTypes = state.filter.selectedTypes,
+                    selectedTypes = filter.selectedTypes,
                     onTypeToggle = onTypeToggle
                 )
-                val sourceFilter = state.filter.source
+                DeviceTypeSelector(
+                    selected = filter.deviceType,
+                    onSelected = onDeviceTypeChange
+                )
+                val sourceFilter = filter.source
                 val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
@@ -1384,58 +1469,13 @@ private fun MeasurementsFilterSheet(
                         )
                     }
                 }
-                if (state.availableDevices.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SectionTitle(text = stringResource(id = R.string.measure_sheet_device))
-                        var expanded by remember { mutableStateOf(false) }
-                        val selectedDevice = state.filter.deviceName.orEmpty()
-                        OutlinedTextField(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            value = selectedDevice,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(id = R.string.measure_sheet_select_device)) },
-                            trailingIcon = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (selectedDevice.isNotEmpty()) {
-                                        IconButton(onClick = {
-                                            onDeviceChange(null)
-                                            expanded = false
-                                        }) {
-                                            Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(id = R.string.measure_sheet_device_all))
-                                        }
-                                    }
-                                    IconButton(onClick = { expanded = true }) {
-                                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
-                                    }
-                                }
-                            }
-                        )
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.measure_sheet_device_all)) },
-                                onClick = {
-                                    onDeviceChange(null)
-                                    expanded = false
-                                }
-                            )
-                            state.availableDevices.forEach { device ->
-                                DropdownMenuItem(
-                                    text = { Text(device) },
-                                    onClick = {
-                                        onDeviceChange(device)
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionTitle(text = stringResource(id = R.string.measure_sheet_anomaly_title))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = state.filter.onlyAnomalies, onCheckedChange = { onToggleAnomaly() })
+                        Checkbox(
+                            checked = filter.onlyAnomalies,
+                            onCheckedChange = { onToggleAnomaly() }
+                        )
                         SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
                     }
                     SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly_hint))
@@ -1454,8 +1494,8 @@ private fun MeasurementsFilterSheet(
                             MeasurementType.SLEEP -> stringResource(id = R.string.measure_sheet_range_sleep)
                             MeasurementType.RESPIRATORY -> stringResource(id = R.string.measure_sheet_range_resp)
                         }
-                        var minText by rememberSaveable("min_${type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
-                        var maxText by rememberSaveable("max_${type.name}") { mutableStateOf(range?.max?.toString().orEmpty()) }
+                        var minText by rememberSaveable("min_${'$'}{type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
+                        var maxText by rememberSaveable("max_${'$'}{type.name}") { mutableStateOf(range?.max?.toString().orEmpty()) }
                         LaunchedEffect(range?.min) {
                             val formatted = range?.min?.toString().orEmpty()
                             if (formatted != minText) {
@@ -1492,6 +1532,15 @@ private fun MeasurementsFilterSheet(
                     }
                 }
             }
+            BluetoothDevicesSection(
+                devices = state.connectedDevices,
+                selectedId = filter.deviceId,
+                selectedName = filter.deviceName,
+                deviceFilter = filter.deviceType,
+                sourceFilter = filter.source,
+                onDeviceSelected = onDeviceChange,
+                onAddDevice = onAddDevice
+            )
             HorizontalDivider()
             Row(
                 modifier = Modifier
@@ -1576,6 +1625,183 @@ private fun RangeRow(
             }
         }
     }
+}
+
+@Composable
+private fun BluetoothDevicesSection(
+    devices: List<ConnectedDevice>,
+    selectedId: Long?,
+    selectedName: String?,
+    deviceFilter: DeviceTypeFilter,
+    sourceFilter: MeasurementSourceFilter,
+    onDeviceSelected: (Long?) -> Unit,
+    onAddDevice: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SectionTitle(text = stringResource(id = R.string.measure_sheet_bt_title))
+        SupportLabel(text = stringResource(id = R.string.measure_sheet_bt_subtitle))
+        SheetToggleChip(
+            label = stringResource(id = R.string.measure_sheet_device_all),
+            selected = selectedId == null,
+            onClick = { onDeviceSelected(null) },
+            modifier = Modifier.fillMaxWidth()
+        )
+        val baseDevices = if (sourceFilter is MeasurementSourceFilter.Only && sourceFilter.source == MeasurementSource.DEVICE) {
+            devices.filter { it.status.isConnected }
+        } else {
+            devices
+        }
+        val filteredDevices = baseDevices.filter { it.matchesFilter(deviceFilter) }
+        if (filteredDevices.isEmpty()) {
+            Surface(
+                shape = InteractiveShape,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SupportLabel(text = stringResource(id = R.string.measure_sheet_bt_placeholder))
+                    Button(onClick = onAddDevice, shape = InteractiveShape) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.measure_sheet_bt_add))
+                    }
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                filteredDevices.forEach { device ->
+                    val isSelected = selectedId == device.id || (selectedId == null && selectedName == device.name)
+                    BluetoothDeviceRow(
+                        device = device,
+                        selected = isSelected,
+                        onClick = { onDeviceSelected(device.id) }
+                    )
+                }
+                Button(onClick = onAddDevice, shape = InteractiveShape) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.measure_sheet_bt_add))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BluetoothDeviceRow(device: ConnectedDevice, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val background = if (selected) colors.primary.copy(alpha = 0.08f) else colors.surface
+    val borderColor = if (selected) colors.primary else colors.outline
+    val statusTint = if (device.status.isConnected) colors.secondary else colors.onSurfaceVariant
+    val statusText = stringResource(id = device.status.titleRes)
+    val lastSyncText = device.lastSync?.let {
+        stringResource(id = R.string.measure_sheet_bt_last_sync, Formatters.formatInstant(it))
+    }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = InteractiveShape,
+        color = background,
+        border = BorderStroke(1.dp, borderColor),
+        tonalElevation = if (selected) 2.dp else 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val icon = if (device.type == MeasurementDeviceType.WEARABLE) {
+                Icons.Default.Watch
+            } else {
+                Icons.Default.DevicesOther
+            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) colors.primary else colors.onSurfaceVariant,
+                modifier = Modifier.size(28.dp)
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = device.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (device.status.isConnected) Icons.Default.CheckCircle else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = statusTint,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = buildString {
+                            append(statusText)
+                            if (!lastSyncText.isNullOrBlank()) {
+                                append(" · ")
+                                append(lastSyncText)
+                            }
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusTint,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = stringResource(id = R.string.measure_sheet_chip_selected),
+                    tint = colors.primary
+                )
+            }
+        }
+    }
+}
+
+private fun ConnectedDevice.matchesFilter(filter: DeviceTypeFilter): Boolean = when (filter) {
+    DeviceTypeFilter.All -> true
+    DeviceTypeFilter.Wearable -> type == MeasurementDeviceType.WEARABLE
+    DeviceTypeFilter.NonWearable -> type == MeasurementDeviceType.NON_WEARABLE
+}
+
+@Composable
+private fun DeviceBadge(label: String, type: MeasurementDeviceType?) {
+    val icon = when (type) {
+        MeasurementDeviceType.WEARABLE -> Icons.Default.Watch
+        MeasurementDeviceType.NON_WEARABLE -> Icons.Default.DevicesOther
+        null -> Icons.Default.Bluetooth
+    }
+    AssistChip(
+        onClick = {},
+        label = {
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        leadingIcon = { Icon(imageVector = icon, contentDescription = null) },
+        shape = InteractiveShape
+    )
 }
 
 @Composable

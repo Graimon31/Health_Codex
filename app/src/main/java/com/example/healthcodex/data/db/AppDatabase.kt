@@ -11,8 +11,8 @@ import com.example.healthcodex.data.measurements.MeasurementConverters
 import com.example.healthcodex.data.profile.UserProfileConverters
 
 @Database(
-    entities = [UserProfileEntity::class, MeasurementEntity::class],
-    version = 3,
+    entities = [UserProfileEntity::class, MeasurementEntity::class, ConnectedDeviceEntity::class],
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(
@@ -23,6 +23,7 @@ import com.example.healthcodex.data.profile.UserProfileConverters
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): com.example.healthcodex.data.db.UserProfileDao
     abstract fun measurementDao(): com.example.healthcodex.data.db.MeasurementDao
+    abstract fun connectedDeviceDao(): com.example.healthcodex.data.db.ConnectedDeviceDao
 
     companion object {
         private const val DATABASE_NAME = "health_codex.db"

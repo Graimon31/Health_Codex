@@ -34,6 +34,14 @@ enum class MeasurementSource(@StringRes val titleRes: Int) {
 }
 
 /**
+ * Type of hardware that produced a measurement entry.
+ */
+enum class MeasurementDeviceType(@StringRes val titleRes: Int) {
+    WEARABLE(R.string.measure_device_type_wearable),
+    NON_WEARABLE(R.string.measure_device_type_non_wearable)
+}
+
+/**
  * Signal quality used to highlight anomalies.
  */
 enum class MeasurementConfidence(@StringRes val titleRes: Int) {
@@ -66,6 +74,8 @@ data class MeasurementEntry(
     val timestamp: Instant,
     val startTimestamp: Instant? = null,
     val source: MeasurementSource = MeasurementSource.DEVICE,
+    val deviceId: Long? = null,
+    val deviceType: MeasurementDeviceType? = null,
     val deviceName: String? = null,
     val deviceAddress: String? = null,
     val note: String? = null,
@@ -97,6 +107,8 @@ data class MeasurementFilter(
     val period: MeasurementPeriod = MeasurementPeriod.Today,
     val selectedTypes: Set<MeasurementType> = MeasurementType.values().toSet(),
     val source: MeasurementSourceFilter = MeasurementSourceFilter.All,
+    val deviceType: DeviceTypeFilter = DeviceTypeFilter.All,
+    val deviceId: Long? = null,
     val deviceName: String? = null,
     val onlyAnomalies: Boolean = false,
     val ranges: Map<MeasurementType, MeasurementValueRange> = emptyMap(),
@@ -106,6 +118,12 @@ data class MeasurementFilter(
 sealed class MeasurementSourceFilter {
     data object All : MeasurementSourceFilter()
     data class Only(val source: MeasurementSource) : MeasurementSourceFilter()
+}
+
+sealed class DeviceTypeFilter {
+    data object All : DeviceTypeFilter()
+    data object Wearable : DeviceTypeFilter()
+    data object NonWearable : DeviceTypeFilter()
 }
 
 /**
@@ -161,4 +179,24 @@ data class MeasurementSummary(
     val averageSpo2: Double?,
     val sleepMinutes: Int?,
     val respiratoryRate: Double?
+)
+
+/**
+ * Connection status for a known Bluetooth device.
+ */
+enum class DeviceConnectionStatus(@StringRes val titleRes: Int, val isConnected: Boolean) {
+    CONNECTED(R.string.measure_device_status_connected, true),
+    INACTIVE(R.string.measure_device_status_inactive, false)
+}
+
+/**
+ * Domain model describing a linked Bluetooth device.
+ */
+data class ConnectedDevice(
+    val id: Long,
+    val name: String,
+    val address: String?,
+    val type: MeasurementDeviceType,
+    val status: DeviceConnectionStatus,
+    val lastSync: Instant?
 )

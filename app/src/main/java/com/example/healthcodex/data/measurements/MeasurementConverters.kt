@@ -3,6 +3,7 @@ package com.example.healthcodex.data.measurements
 
 import androidx.room.TypeConverter
 import com.example.healthcodex.data.db.InstantJsonAdapter
+import com.example.healthcodex.data.measurements.DeviceConnectionStatus
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
@@ -39,6 +40,22 @@ class MeasurementConverters {
 
     @TypeConverter
     fun confidenceToString(confidence: MeasurementConfidence?): String? = confidence?.name
+
+    @TypeConverter
+    fun deviceTypeFromString(value: String?): MeasurementDeviceType? = value?.let {
+        runCatching { MeasurementDeviceType.valueOf(it) }.getOrNull()
+    }
+
+    @TypeConverter
+    fun deviceTypeToString(type: MeasurementDeviceType?): String? = type?.name
+
+    @TypeConverter
+    fun deviceStatusFromString(value: String?): DeviceConnectionStatus = value?.let {
+        runCatching { DeviceConnectionStatus.valueOf(it) }.getOrElse { DeviceConnectionStatus.INACTIVE }
+    } ?: DeviceConnectionStatus.INACTIVE
+
+    @TypeConverter
+    fun deviceStatusToString(status: DeviceConnectionStatus?): String? = status?.name
 
     @TypeConverter
     fun detailsFromJson(json: String?): MeasurementDetails = json?.let {

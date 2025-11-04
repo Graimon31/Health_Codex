@@ -37,6 +37,8 @@
     <string name="measure_filter_summary_types_count">Типы: %1$d</string>
     <string name="measure_filter_summary_source_device">Источник: устройство</string>
     <string name="measure_filter_summary_source_manual">Источник: вручную</string>
+    <string name="measure_filter_summary_wearable">Тип: носимые</string>
+    <string name="measure_filter_summary_non_wearable">Тип: неносимые</string>
     <string name="measure_filter_summary_device">Устройство: %1$s</string>
     <string name="measure_filter_summary_anomaly">Только аномалии</string>
     <string name="measure_filter_summary_ranges">Диапазоны: %1$d</string>
@@ -63,6 +65,10 @@
     <string name="measure_summary_unit_weight_delta">%1$+.1f кг</string>
     <string name="measure_summary_unit_spo2">%1$d%%</string>
     <string name="measure_summary_unit_respiratory">%1$d вдох/мин</string>
+    <string name="measure_device_type_wearable">Носимые</string>
+    <string name="measure_device_type_non_wearable">Неносимые</string>
+    <string name="measure_device_status_connected">Подключено</string>
+    <string name="measure_device_status_inactive">Неактивно</string>
     <string name="measure_type_selected_state">Тип выбран</string>
     <string name="measure_type_unselected_state">Тип не выбран</string>
     <string name="measure_empty_search">Ничего не найдено</string>
@@ -76,6 +82,10 @@
     <string name="measure_sheet_device">Устройство</string>
     <string name="measure_sheet_select_device">Выбор устройства</string>
     <string name="measure_sheet_device_all">Любое</string>
+    <string name="measure_sheet_device_type_title">Тип устройства</string>
+    <string name="measure_sheet_device_type_all">Все устройства</string>
+    <string name="measure_sheet_device_type_wearable">Носимые</string>
+    <string name="measure_sheet_device_type_non_wearable">Неносимые</string>
     <string name="measure_sheet_anomaly_title">Аномалии</string>
     <string name="measure_sheet_anomaly">Только аномальные</string>
     <string name="measure_sheet_anomaly_hint">Показывать только записи с выходом параметров за норму</string>
@@ -95,6 +105,11 @@
     <string name="measure_sheet_range_spo2">SpO₂ (%)</string>
     <string name="measure_sheet_range_sleep">Сон (часы)</string>
     <string name="measure_sheet_range_resp">Дыхание (вдох/мин)</string>
+    <string name="measure_sheet_bt_title">Bluetooth устройства</string>
+    <string name="measure_sheet_bt_subtitle">Устройства, подключённые к приложению</string>
+    <string name="measure_sheet_bt_placeholder">Нет подключённых устройств. Подключите устройство, чтобы получать измерения.</string>
+    <string name="measure_sheet_bt_add">Добавить устройство</string>
+    <string name="measure_sheet_bt_last_sync">синхронизировано %1$s</string>
     <string name="measure_editor_title_new">Новая запись</string>
     <string name="measure_editor_title_edit">Редактирование записи</string>
     <string name="measure_save">Сохранить</string>
