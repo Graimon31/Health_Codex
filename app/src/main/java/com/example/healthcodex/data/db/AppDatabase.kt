@@ -59,10 +59,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceId INTEGER")
-                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceType TEXT")
-                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceName TEXT")
-                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceAddress TEXT")
+                addColumnIfMissing(db, table = "measurements", column = "deviceId", sql = "ALTER TABLE measurements ADD COLUMN deviceId INTEGER")
+                addColumnIfMissing(db, table = "measurements", column = "deviceType", sql = "ALTER TABLE measurements ADD COLUMN deviceType TEXT")
+                addColumnIfMissing(db, table = "measurements", column = "deviceName", sql = "ALTER TABLE measurements ADD COLUMN deviceName TEXT")
+                addColumnIfMissing(db, table = "measurements", column = "deviceAddress", sql = "ALTER TABLE measurements ADD COLUMN deviceAddress TEXT")
 
                 db.execSQL(
                     """
@@ -77,6 +77,32 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
             }
+        }
+
+        private fun addColumnIfMissing(
+            db: SupportSQLiteDatabase,
+            table: String,
+            column: String,
+            sql: String
+        ) {
+            if (!db.hasColumn(table, column)) {
+                db.execSQL(sql)
+            }
+        }
+
+        private fun SupportSQLiteDatabase.hasColumn(table: String, column: String): Boolean {
+            query("PRAGMA table_info(`$table`)").use { cursor ->
+                val nameIndex = cursor.getColumnIndex("name")
+                if (nameIndex == -1) {
+                    return false
+                }
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(nameIndex) == column) {
+                        return true
+                    }
+                }
+            }
+            return false
         }
     }
 }
