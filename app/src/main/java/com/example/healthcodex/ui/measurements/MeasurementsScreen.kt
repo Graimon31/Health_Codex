@@ -196,7 +196,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             onTypeToggle = { viewModel.toggleType(it) },
             onSourceChange = { viewModel.setSourceFilter(it) },
             onDeviceTypeChange = { viewModel.setDeviceTypeFilter(it) },
-            onDeviceChange = { viewModel.setDeviceFilter(it) },
+            onDeviceChange = { deviceId: Long? -> viewModel.setDeviceFilter(deviceId) },
             onToggleAnomaly = { viewModel.toggleAnomalies() },
             onRangeChange = { type, min, max -> viewModel.setRange(type, min, max) },
             onClear = { viewModel.clearFilters() },
@@ -1396,6 +1396,7 @@ private fun MeasurementsFilterSheet(
     val ranges = state.filter.ranges
     val filter = state.filter
     val customPeriod = filter.period as? MeasurementPeriod.Custom
+    val availableDevices = state.connectedDevices
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -1533,7 +1534,7 @@ private fun MeasurementsFilterSheet(
                 }
             }
             BluetoothDevicesSection(
-                devices = state.connectedDevices,
+                devices = availableDevices,
                 selectedId = filter.deviceId,
                 selectedName = filter.deviceName,
                 deviceFilter = filter.deviceType,
