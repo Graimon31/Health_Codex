@@ -42,6 +42,7 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -50,7 +51,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -693,6 +693,14 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
         MeasurementPeriod.Week,
         MeasurementPeriod.Month
     )
+    val segmentedColors = SegmentedButtonDefaults.colors(
+        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        activeBorderColor = MaterialTheme.colorScheme.primary,
+        inactiveContainerColor = Color.Transparent,
+        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+        inactiveBorderColor = MaterialTheme.colorScheme.outline
+    )
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_filters_period))
         SingleChoiceSegmentedButtonRow(
@@ -705,18 +713,11 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
                     selected = selected::class == period::class,
                     onClick = { onPeriodSelected(period) },
                     shape = SegmentedButtonDefaults.itemShape(index, periods.size, baseShape = InteractiveShape),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        activeBorderColor = MaterialTheme.colorScheme.primary,
-                        inactiveContainerColor = Color.Transparent,
-                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                        inactiveBorderColor = MaterialTheme.colorScheme.outline
-                    )
+                    colors = segmentedColors
                 ) {
                     Text(
                         text = stringResource(id = period.labelRes),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
             }
@@ -729,18 +730,11 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
                     onPeriodSelected(MeasurementPeriod.Custom(start, end))
                 },
                 shape = SegmentedButtonDefaults.itemShape(periods.size, periods.size + 1, baseShape = InteractiveShape),
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                    activeBorderColor = MaterialTheme.colorScheme.primary,
-                    inactiveContainerColor = Color.Transparent,
-                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                    inactiveBorderColor = MaterialTheme.colorScheme.outline
-                )
+                colors = segmentedColors
             ) {
                 Text(
                     text = stringResource(id = R.string.measure_period_custom),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
         }
@@ -753,8 +747,8 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_filters_type))
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .padding(top = 6.dp)
                 .fillMaxWidth()
@@ -778,9 +772,10 @@ private fun MeasurementTypeChip(
     selected: Boolean,
     onToggle: (MeasurementType) -> Unit
 ) {
-    val background = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val colors = MaterialTheme.colorScheme
+    val background = if (selected) colors.secondaryContainer else colors.surface
+    val contentColor = if (selected) colors.onSecondaryContainer else colors.onSurface
+    val borderColor = if (selected) colors.secondary else colors.outline
     val stateText = if (selected) {
         stringResource(id = R.string.measure_type_selected_state)
     } else {
@@ -801,7 +796,9 @@ private fun MeasurementTypeChip(
         tonalElevation = if (selected) 2.dp else 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            modifier = Modifier
+                .heightIn(min = 40.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -811,6 +808,63 @@ private fun MeasurementTypeChip(
             Text(
                 text = stringResource(id = type.titleRes),
                 style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SheetToggleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    val background = if (selected) colors.secondaryContainer else colors.surface
+    val content = if (selected) colors.onSecondaryContainer else colors.onSurface
+    val borderColor = if (selected) colors.secondary else colors.outline
+    val stateText = if (selected) {
+        stringResource(id = R.string.measure_sheet_chip_selected)
+    } else {
+        stringResource(id = R.string.measure_sheet_chip_unselected)
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .semantics {
+                role = Role.Button
+                this.selected = selected
+                stateDescription = stateText
+            },
+        shape = InteractiveShape,
+        color = background,
+        contentColor = content,
+        border = BorderStroke(1.dp, borderColor),
+        tonalElevation = if (selected) 1.dp else 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 6.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1261,157 +1315,204 @@ private fun MeasurementsFilterSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val ranges = state.filter.ranges
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionTitle(text = stringResource(id = R.string.measure_sheet_title))
-            PeriodSelector(
-                selected = state.filter.period,
-                onPeriodSelected = {
-                    onPeriodSelected(it)
-                    if (it is MeasurementPeriod.Custom) {
-                        onCustomPeriod(it.start, it.end)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 24.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.measure_sheet_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                PeriodSelector(
+                    selected = state.filter.period,
+                    onPeriodSelected = {
+                        onPeriodSelected(it)
+                        if (it is MeasurementPeriod.Custom) {
+                            onCustomPeriod(it.start, it.end)
+                        }
+                    }
+                )
+                val customPeriod = state.filter.period as? MeasurementPeriod.Custom
+                if (customPeriod != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DateField(
+                            label = stringResource(id = R.string.measure_field_start_date),
+                            date = customPeriod.start,
+                            onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
+                        )
+                        DateField(
+                            label = stringResource(id = R.string.measure_field_end_date),
+                            date = customPeriod.end,
+                            onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
+                        )
                     }
                 }
-            )
-            val customPeriod = state.filter.period as? MeasurementPeriod.Custom
-            if (customPeriod != null) {
+                TypeSelector(
+                    selectedTypes = state.filter.selectedTypes,
+                    onTypeToggle = onTypeToggle
+                )
+                val sourceFilter = state.filter.source
+                val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DateField(
-                        label = stringResource(id = R.string.measure_field_start_date),
-                        date = customPeriod.start,
-                        onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
-                    )
-                    DateField(
-                        label = stringResource(id = R.string.measure_field_end_date),
-                        date = customPeriod.end,
-                        onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
-                    )
+                    SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        SheetToggleChip(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.measure_sheet_source_all),
+                            selected = sourceFilter is MeasurementSourceFilter.All,
+                            onClick = { onSourceChange(MeasurementSourceFilter.All) }
+                        )
+                        SheetToggleChip(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.measure_sheet_source_device),
+                            selected = selectedSource == MeasurementSource.DEVICE,
+                            onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) }
+                        )
+                        SheetToggleChip(
+                            modifier = Modifier.weight(1f),
+                            label = stringResource(id = R.string.measure_sheet_source_manual),
+                            selected = selectedSource == MeasurementSource.MANUAL,
+                            onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) }
+                        )
+                    }
                 }
-            }
-            TypeSelector(
-                selectedTypes = state.filter.selectedTypes,
-                onTypeToggle = onTypeToggle
-            )
-            SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
-            val sourceFilter = state.filter.source
-            val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = sourceFilter is MeasurementSourceFilter.All,
-                    onClick = { onSourceChange(MeasurementSourceFilter.All) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_all)) },
-                    shape = InteractiveShape
-                )
-                FilterChip(
-                    selected = selectedSource == MeasurementSource.DEVICE,
-                    onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_device)) },
-                    shape = InteractiveShape
-                )
-                FilterChip(
-                    selected = selectedSource == MeasurementSource.MANUAL,
-                    onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) },
-                    label = { Text(text = stringResource(id = R.string.measure_sheet_source_manual)) },
-                    shape = InteractiveShape
-                )
-            }
-            if (state.availableDevices.isNotEmpty()) {
-                SectionTitle(text = stringResource(id = R.string.measure_sheet_device))
-                var expanded by remember { mutableStateOf(false) }
-                val selectedDevice = state.filter.deviceName.orEmpty()
-                OutlinedTextField(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    value = selectedDevice,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(id = R.string.measure_sheet_select_device)) },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (selectedDevice.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    onDeviceChange(null)
-                                    expanded = false
-                                }) {
-                                    Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(id = R.string.measure_sheet_device_all))
+                if (state.availableDevices.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionTitle(text = stringResource(id = R.string.measure_sheet_device))
+                        var expanded by remember { mutableStateOf(false) }
+                        val selectedDevice = state.filter.deviceName.orEmpty()
+                        OutlinedTextField(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            value = selectedDevice,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(id = R.string.measure_sheet_select_device)) },
+                            trailingIcon = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (selectedDevice.isNotEmpty()) {
+                                        IconButton(onClick = {
+                                            onDeviceChange(null)
+                                            expanded = false
+                                        }) {
+                                            Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(id = R.string.measure_sheet_device_all))
+                                        }
+                                    }
+                                    IconButton(onClick = { expanded = true }) {
+                                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                                    }
                                 }
                             }
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                        )
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.measure_sheet_device_all)) },
+                                onClick = {
+                                    onDeviceChange(null)
+                                    expanded = false
+                                }
+                            )
+                            state.availableDevices.forEach { device ->
+                                DropdownMenuItem(
+                                    text = { Text(device) },
+                                    onClick = {
+                                        onDeviceChange(device)
+                                        expanded = false
+                                    }
+                                )
                             }
                         }
                     }
-                )
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(id = R.string.measure_sheet_device_all)) },
-                        onClick = {
-                            onDeviceChange(null)
-                            expanded = false
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionTitle(text = stringResource(id = R.string.measure_sheet_anomaly_title))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = state.filter.onlyAnomalies, onCheckedChange = { onToggleAnomaly() })
+                        SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
+                    }
+                    SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly_hint))
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
+                    MeasurementType.values().forEach { type ->
+                        val range = ranges[type]
+                        val rangeTitle = when (type) {
+                            MeasurementType.HEART_RATE -> stringResource(id = R.string.measure_sheet_range_pulse)
+                            MeasurementType.STEPS -> stringResource(id = R.string.measure_sheet_range_steps)
+                            MeasurementType.CALORIES -> stringResource(id = R.string.measure_sheet_range_calories)
+                            MeasurementType.BLOOD_PRESSURE -> stringResource(id = R.string.measure_sheet_range_pressure)
+                            MeasurementType.WEIGHT -> stringResource(id = R.string.measure_sheet_range_weight)
+                            MeasurementType.OXYGEN -> stringResource(id = R.string.measure_sheet_range_spo2)
+                            MeasurementType.SLEEP -> stringResource(id = R.string.measure_sheet_range_sleep)
+                            MeasurementType.RESPIRATORY -> stringResource(id = R.string.measure_sheet_range_resp)
                         }
-                    )
-                    state.availableDevices.forEach { device ->
-                        DropdownMenuItem(
-                            text = { Text(device) },
-                            onClick = {
-                                onDeviceChange(device)
-                                expanded = false
+                        var minText by rememberSaveable("min_${type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
+                        var maxText by rememberSaveable("max_${type.name}") { mutableStateOf(range?.max?.toString().orEmpty()) }
+                        LaunchedEffect(range?.min) {
+                            val formatted = range?.min?.toString().orEmpty()
+                            if (formatted != minText) {
+                                minText = formatted
+                            }
+                        }
+                        LaunchedEffect(range?.max) {
+                            val formatted = range?.max?.toString().orEmpty()
+                            if (formatted != maxText) {
+                                maxText = formatted
+                            }
+                        }
+                        RangeRow(
+                            title = rangeTitle,
+                            minValue = minText,
+                            maxValue = maxText,
+                            onMinChange = {
+                                minText = it
+                                val normalized = it.replace(',', '.')
+                                if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
+                                    val maxNormalized = maxText.replace(',', '.').toDoubleOrNull()
+                                    onRangeChange(type, normalized.toDoubleOrNull(), maxNormalized)
+                                }
+                            },
+                            onMaxChange = {
+                                maxText = it
+                                val normalized = it.replace(',', '.')
+                                if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
+                                    val minNormalized = minText.replace(',', '.').toDoubleOrNull()
+                                    onRangeChange(type, minNormalized, normalized.toDoubleOrNull())
+                                }
                             }
                         )
                     }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = state.filter.onlyAnomalies, onCheckedChange = { onToggleAnomaly() })
-                SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
-            }
-            SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
-            MeasurementType.values().forEach { type ->
-                val range = ranges[type]
-                var minText by rememberSaveable("min_${type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
-                var maxText by rememberSaveable("max_${type.name}") { mutableStateOf(range?.max?.toString().orEmpty()) }
-                LaunchedEffect(range?.min) {
-                    val formatted = range?.min?.toString().orEmpty()
-                    if (formatted != minText) {
-                        minText = formatted
-                    }
-                }
-                LaunchedEffect(range?.max) {
-                    val formatted = range?.max?.toString().orEmpty()
-                    if (formatted != maxText) {
-                        maxText = formatted
-                    }
-                }
-                RangeRow(
-                    title = stringResource(id = type.titleRes),
-                    minValue = minText,
-                    maxValue = maxText,
-                    onMinChange = {
-                        minText = it
-                        val normalized = it.replace(',', '.')
-                        if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
-                            val maxNormalized = maxText.replace(',', '.').toDoubleOrNull()
-                            onRangeChange(type, normalized.toDoubleOrNull(), maxNormalized)
-                        }
-                    },
-                    onMaxChange = {
-                        maxText = it
-                        val normalized = it.replace(',', '.')
-                        if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
-                            val minNormalized = minText.replace(',', '.').toDoubleOrNull()
-                            onRangeChange(type, minNormalized, normalized.toDoubleOrNull())
-                        }
-                    }
-                )
-            }
             HorizontalDivider()
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(onClick = onClear, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_sheet_clear)) }
-                TextButton(onClick = onDismiss, shape = InteractiveShape) { Text(text = stringResource(id = R.string.measure_sheet_close)) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TextButton(
+                    onClick = onClear,
+                    shape = InteractiveShape,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.measure_sheet_clear))
+                }
+                Button(
+                    onClick = onDismiss,
+                    shape = InteractiveShape,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.measure_sheet_apply))
+                }
             }
         }
     }
@@ -1425,23 +1526,54 @@ private fun RangeRow(
     onMinChange: (String) -> Unit,
     onMaxChange: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = title, fontWeight = FontWeight.SemiBold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-            OutlinedTextField(
-                value = minValue,
-                onValueChange = onMinChange,
-                label = { Text(stringResource(id = R.string.measure_sheet_range_min)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal)
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = InteractiveShape,
+        color = colors.surfaceVariant,
+        tonalElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.onSurface
             )
-            OutlinedTextField(
-                value = maxValue,
-                onValueChange = onMaxChange,
-                label = { Text(stringResource(id = R.string.measure_sheet_range_max)) },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal)
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(id = R.string.measure_sheet_range_min),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = minValue,
+                        onValueChange = onMinChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(id = R.string.measure_sheet_range_max),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = maxValue,
+                        onValueChange = onMaxChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Decimal)
+                    )
+                }
+            }
         }
     }
 }
