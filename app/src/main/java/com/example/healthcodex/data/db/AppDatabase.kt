@@ -7,6 +7,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.healthcodex.data.measurements.MeasurementConverters
 import com.example.healthcodex.data.profile.UserProfileConverters
 
@@ -41,7 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
         private fun buildDatabase(context: Context): AppDatabase {
             val builder = {
                 Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_3_4)
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .build()
             }
@@ -52,6 +54,28 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 context.deleteDatabase(DATABASE_NAME)
                 builder()
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceId INTEGER")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceType TEXT")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceName TEXT")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN deviceAddress TEXT")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `connected_devices` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `address` TEXT,
+                        `type` TEXT NOT NULL DEFAULT 'WEARABLE',
+                        `status` TEXT NOT NULL DEFAULT 'INACTIVE',
+                        `lastSync` TEXT
+                    )
+                    """.trimIndent()
+                )
             }
         }
     }
