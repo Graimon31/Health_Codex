@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 object MeasurementsNav {
     const val home = "measurements"
     const val detail = "measurements/detail/{id}"
+    const val devices = "measurements/devices"
     fun detail(id: Long) = "measurements/detail/$id"
 }
 
@@ -27,6 +28,18 @@ fun NavGraphBuilder.measurementsNavGraph(
         MeasurementDetailRoute(
             measurementId = id,
             onBack = { navController.popBackStack() }
+        )
+    }
+    composable(MeasurementsNav.devices) {
+        DeviceConnectRoute(
+            onBack = { navController.popBackStack() },
+            onConnected = { deviceName ->
+                navController.previousBackStackEntry?.savedStateHandle?.set(
+                    "measurements_device_linked",
+                    deviceName
+                )
+                navController.popBackStack()
+            }
         )
     }
 }

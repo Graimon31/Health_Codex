@@ -207,12 +207,6 @@ class MeasurementsViewModel(
         filterState.value = filterState.value.copy(query = query)
     }
 
-    fun showAddDeviceHint() {
-        viewModelScope.launch {
-            _events.emit(MeasurementsEvent.ShowMessage("Подключение устройств доступно в разделе \"Профиль\""))
-        }
-    }
-
     fun setRange(type: MeasurementType, min: Double?, max: Double?) {
         val newRanges = filterState.value.ranges.toMutableMap()
         if (min == null && max == null) {

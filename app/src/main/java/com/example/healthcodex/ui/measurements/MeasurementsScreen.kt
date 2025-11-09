@@ -130,6 +130,7 @@ import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Watch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.getStateFlow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.R
@@ -181,6 +182,20 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         }
     }
 
+    LaunchedEffect(navController) {
+        val handle = navController.currentBackStackEntry?.savedStateHandle
+        handle
+            ?.getStateFlow<String?>("measurements_device_linked", null)
+            ?.collect { name ->
+                if (!name.isNullOrBlank()) {
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.measure_device_connected_toast, name)
+                    )
+                    handle.set("measurements_device_linked", null)
+                }
+            }
+    }
+
     editorState?.let { form ->
         MeasurementEditorDialog(
             form = form,
@@ -203,7 +218,12 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             onRangeChange = { type, min, max -> viewModel.setRange(type, min, max) },
             onClear = { viewModel.clearFilters() },
             onCustomPeriod = { start, end -> viewModel.setCustomPeriod(start, end) },
-            onAddDevice = { viewModel.showAddDeviceHint() }
+            onAddDevice = {
+                filterSheetVisible = false
+                navController.navigate(MeasurementsNav.devices) {
+                    launchSingleTop = true
+                }
+            }
         )
     }
 
@@ -1569,7 +1589,10 @@ private fun MeasurementsFilterSheet(
                         deviceFilter = filter.deviceType,
                         sourceFilter = filter.source,
                         onDeviceSelected = onDeviceChange,
-                        onAddDevice = onAddDevice
+                        onAddDevice = {
+                            onAddDevice()
+                            onDismiss()
+                        }
                     )
                 }
                 item {

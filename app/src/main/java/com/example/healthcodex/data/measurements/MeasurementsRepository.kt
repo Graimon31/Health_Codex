@@ -61,6 +61,10 @@ class MeasurementsRepository(
             connectedDeviceDao.updateStatus(id, status, lastSync)
         }
 
+    suspend fun deleteDevice(device: ConnectedDevice) = withContext(ioDispatcher) {
+        connectedDeviceDao.delete(device.toEntity())
+    }
+
     private fun MeasurementEntity.toDomain(): MeasurementEntry = MeasurementEntry(
         id = id,
         type = type,
