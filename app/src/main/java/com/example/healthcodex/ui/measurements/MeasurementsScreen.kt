@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
@@ -1400,189 +1401,202 @@ private fun MeasurementsFilterSheet(
     val availableDevices = state.connectedDevices
     val listState = rememberLazyListState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth(),
-            state = listState,
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            item {
-                Text(
-                    text = stringResource(id = R.string.measure_sheet_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            item {
-                PeriodSelector(
-                    selected = filter.period,
-                    onPeriodSelected = {
-                        onPeriodSelected(it)
-                        if (it is MeasurementPeriod.Custom) {
-                            onCustomPeriod(it.start, it.end)
-                        }
-                    }
-                )
-            }
-            if (customPeriod != null) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DateField(
-                            label = stringResource(id = R.string.measure_field_start_date),
-                            date = customPeriod.start,
-                            onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
-                        )
-                        DateField(
-                            label = stringResource(id = R.string.measure_field_end_date),
-                            date = customPeriod.end,
-                            onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
-                        )
-                    }
-                }
-            }
-            item {
-                TypeSelector(
-                    selectedTypes = filter.selectedTypes,
-                    onTypeToggle = onTypeToggle
-                )
-            }
-            item {
-                DeviceTypeSelector(
-                    selected = filter.deviceType,
-                    onSelected = onDeviceTypeChange
-                )
-            }
-            item {
-                val sourceFilter = filter.source
-                val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        SheetToggleChip(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(id = R.string.measure_sheet_source_all),
-                            selected = sourceFilter is MeasurementSourceFilter.All,
-                            onClick = { onSourceChange(MeasurementSourceFilter.All) }
-                        )
-                        SheetToggleChip(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(id = R.string.measure_sheet_source_device),
-                            selected = selectedSource == MeasurementSource.DEVICE,
-                            onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) }
-                        )
-                        SheetToggleChip(
-                            modifier = Modifier.weight(1f),
-                            label = stringResource(id = R.string.measure_sheet_source_manual),
-                            selected = selectedSource == MeasurementSource.MANUAL,
-                            onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) }
-                        )
-                    }
-                }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionTitle(text = stringResource(id = R.string.measure_sheet_anomaly_title))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = filter.onlyAnomalies,
-                            onCheckedChange = { onToggleAnomaly() }
-                        )
-                        SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
-                    }
-                    SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly_hint))
-                }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
-                    MeasurementType.values().forEach { type ->
-                        val range = ranges[type]
-                        val rangeTitle = when (type) {
-                            MeasurementType.HEART_RATE -> stringResource(id = R.string.measure_sheet_range_pulse)
-                            MeasurementType.STEPS -> stringResource(id = R.string.measure_sheet_range_steps)
-                            MeasurementType.CALORIES -> stringResource(id = R.string.measure_sheet_range_calories)
-                            MeasurementType.BLOOD_PRESSURE -> stringResource(id = R.string.measure_sheet_range_pressure)
-                            MeasurementType.WEIGHT -> stringResource(id = R.string.measure_sheet_range_weight)
-                            MeasurementType.OXYGEN -> stringResource(id = R.string.measure_sheet_range_spo2)
-                            MeasurementType.SLEEP -> stringResource(id = R.string.measure_sheet_range_sleep)
-                            MeasurementType.RESPIRATORY -> stringResource(id = R.string.measure_sheet_range_resp)
-                        }
-                        var minText by rememberSaveable("min_${'$'}{type.name}") { mutableStateOf(range?.min?.toString().orEmpty()) }
-                        var maxText by rememberSaveable("max_${'$'}{type.name}") { mutableStateOf(range?.max?.toString().orEmpty()) }
-                        LaunchedEffect(range?.min) {
-                            val formatted = range?.min?.toString().orEmpty()
-                            if (formatted != minText) {
-                                minText = formatted
-                            }
-                        }
-                        LaunchedEffect(range?.max) {
-                            val formatted = range?.max?.toString().orEmpty()
-                            if (formatted != maxText) {
-                                maxText = formatted
-                            }
-                        }
-                        RangeRow(
-                            title = rangeTitle,
-                            minValue = minText,
-                            maxValue = maxText,
-                            onMinChange = {
-                                minText = it
-                                val normalized = it.replace(',', '.')
-                                if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
-                                    val maxNormalized = maxText.replace(',', '.').toDoubleOrNull()
-                                    onRangeChange(type, normalized.toDoubleOrNull(), maxNormalized)
-                                }
-                            },
-                            onMaxChange = {
-                                maxText = it
-                                val normalized = it.replace(',', '.')
-                                if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
-                                    val minNormalized = minText.replace(',', '.').toDoubleOrNull()
-                                    onRangeChange(type, minNormalized, normalized.toDoubleOrNull())
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-            item {
-                BluetoothDevicesSection(
-                    devices = availableDevices,
-                    selectedId = filter.deviceId,
-                    selectedName = filter.deviceName,
-                    deviceFilter = filter.deviceType,
-                    sourceFilter = filter.source,
-                    onDeviceSelected = onDeviceChange,
-                    onAddDevice = onAddDevice
-                )
-            }
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-        }
-        HorizontalDivider()
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .navigationBarsPadding(bottom = false)
+                .imePadding()
         ) {
-            TextButton(
-                onClick = onClear,
-                shape = InteractiveShape,
-                modifier = Modifier.weight(1f)
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                state = listState,
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Text(text = stringResource(id = R.string.measure_sheet_clear))
+                item {
+                    Text(
+                        text = stringResource(id = R.string.measure_sheet_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                item {
+                    PeriodSelector(
+                        selected = filter.period,
+                        onPeriodSelected = {
+                            onPeriodSelected(it)
+                            if (it is MeasurementPeriod.Custom) {
+                                onCustomPeriod(it.start, it.end)
+                            }
+                        }
+                    )
+                }
+                if (customPeriod != null) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            DateField(
+                                label = stringResource(id = R.string.measure_field_start_date),
+                                date = customPeriod.start,
+                                onDateSelected = { newStart -> onCustomPeriod(newStart, customPeriod.end) }
+                            )
+                            DateField(
+                                label = stringResource(id = R.string.measure_field_end_date),
+                                date = customPeriod.end,
+                                onDateSelected = { newEnd -> onCustomPeriod(customPeriod.start, newEnd) }
+                            )
+                        }
+                    }
+                }
+                item {
+                    TypeSelector(
+                        selectedTypes = filter.selectedTypes,
+                        onTypeToggle = onTypeToggle
+                    )
+                }
+                item {
+                    DeviceTypeSelector(
+                        selected = filter.deviceType,
+                        onSelected = onDeviceTypeChange
+                    )
+                }
+                item {
+                    val sourceFilter = filter.source
+                    val selectedSource = (sourceFilter as? MeasurementSourceFilter.Only)?.source
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionTitle(text = stringResource(id = R.string.measure_sheet_source))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            SheetToggleChip(
+                                modifier = Modifier.weight(1f),
+                                label = stringResource(id = R.string.measure_sheet_source_all),
+                                selected = sourceFilter is MeasurementSourceFilter.All,
+                                onClick = { onSourceChange(MeasurementSourceFilter.All) }
+                            )
+                            SheetToggleChip(
+                                modifier = Modifier.weight(1f),
+                                label = stringResource(id = R.string.measure_sheet_source_device),
+                                selected = selectedSource == MeasurementSource.DEVICE,
+                                onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.DEVICE)) }
+                            )
+                            SheetToggleChip(
+                                modifier = Modifier.weight(1f),
+                                label = stringResource(id = R.string.measure_sheet_source_manual),
+                                selected = selectedSource == MeasurementSource.MANUAL,
+                                onClick = { onSourceChange(MeasurementSourceFilter.Only(MeasurementSource.MANUAL)) }
+                            )
+                        }
+                    }
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SectionTitle(text = stringResource(id = R.string.measure_sheet_anomaly_title))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = filter.onlyAnomalies,
+                                onCheckedChange = { onToggleAnomaly() }
+                            )
+                            SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly))
+                        }
+                        SupportLabel(text = stringResource(id = R.string.measure_sheet_anomaly_hint))
+                    }
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SectionTitle(text = stringResource(id = R.string.measure_sheet_range_title))
+                        MeasurementType.values().forEach { type ->
+                            val range = ranges[type]
+                            val rangeTitle = when (type) {
+                                MeasurementType.HEART_RATE -> stringResource(id = R.string.measure_sheet_range_pulse)
+                                MeasurementType.STEPS -> stringResource(id = R.string.measure_sheet_range_steps)
+                                MeasurementType.CALORIES -> stringResource(id = R.string.measure_sheet_range_calories)
+                                MeasurementType.BLOOD_PRESSURE -> stringResource(id = R.string.measure_sheet_range_pressure)
+                                MeasurementType.WEIGHT -> stringResource(id = R.string.measure_sheet_range_weight)
+                                MeasurementType.OXYGEN -> stringResource(id = R.string.measure_sheet_range_spo2)
+                                MeasurementType.SLEEP -> stringResource(id = R.string.measure_sheet_range_sleep)
+                                MeasurementType.RESPIRATORY -> stringResource(id = R.string.measure_sheet_range_resp)
+                            }
+                            var minText by rememberSaveable(key = "min_${type.name}") {
+                                mutableStateOf(range?.min?.toString().orEmpty())
+                            }
+                            var maxText by rememberSaveable(key = "max_${type.name}") {
+                                mutableStateOf(range?.max?.toString().orEmpty())
+                            }
+                            LaunchedEffect(range?.min) {
+                                val formatted = range?.min?.toString().orEmpty()
+                                if (formatted != minText) {
+                                    minText = formatted
+                                }
+                            }
+                            LaunchedEffect(range?.max) {
+                                val formatted = range?.max?.toString().orEmpty()
+                                if (formatted != maxText) {
+                                    maxText = formatted
+                                }
+                            }
+                            RangeRow(
+                                title = rangeTitle,
+                                minValue = minText,
+                                maxValue = maxText,
+                                onMinChange = {
+                                    minText = it
+                                    val normalized = it.replace(',', '.')
+                                    if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
+                                        val maxNormalized = maxText.replace(',', '.').toDoubleOrNull()
+                                        onRangeChange(type, normalized.toDoubleOrNull(), maxNormalized)
+                                    }
+                                },
+                                onMaxChange = {
+                                    maxText = it
+                                    val normalized = it.replace(',', '.')
+                                    if (normalized.isBlank() || normalized.toDoubleOrNull() != null) {
+                                        val minNormalized = minText.replace(',', '.').toDoubleOrNull()
+                                        onRangeChange(type, minNormalized, normalized.toDoubleOrNull())
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+                item {
+                    BluetoothDevicesSection(
+                        devices = availableDevices,
+                        selectedId = filter.deviceId,
+                        selectedName = filter.deviceName,
+                        deviceFilter = filter.deviceType,
+                        sourceFilter = filter.source,
+                        onDeviceSelected = onDeviceChange,
+                        onAddDevice = onAddDevice
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
-            Button(
-                onClick = onDismiss,
-                shape = InteractiveShape,
-                modifier = Modifier.weight(1f)
+            HorizontalDivider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(text = stringResource(id = R.string.measure_sheet_apply))
+                TextButton(
+                    onClick = onClear,
+                    shape = InteractiveShape,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.measure_sheet_clear))
+                }
+                Button(
+                    onClick = onDismiss,
+                    shape = InteractiveShape,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.measure_sheet_apply))
+                }
             }
         }
     }
