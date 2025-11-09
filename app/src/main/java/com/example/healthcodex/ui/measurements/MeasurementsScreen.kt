@@ -9,6 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -129,6 +131,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.ripple.rememberRipple
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.getStateFlow
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -922,13 +925,20 @@ private fun SheetToggleChip(
     } else {
         stringResource(id = R.string.measure_sheet_chip_unselected)
     }
+    val interactionSource = remember { MutableInteractionSource() }
 
     Surface(
-        onClick = onClick,
         modifier = modifier
             .heightIn(min = 44.dp)
+            .clip(InteractiveShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = true),
+                role = Role.Button,
+                onClick = onClick
+            )
             .semantics {
-                role = Role.Button
+                this.role = Role.Button
                 this.selected = selected
                 stateDescription = stateText
             },
@@ -1424,7 +1434,7 @@ private fun MeasurementsFilterSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding(bottom = false)
+                .navigationBarsPadding()
                 .imePadding()
         ) {
             LazyColumn(
@@ -1763,9 +1773,17 @@ private fun BluetoothDeviceRow(device: ConnectedDevice, selected: Boolean, onCli
     val lastSyncText = device.lastSync?.let {
         stringResource(id = R.string.measure_sheet_bt_last_sync, Formatters.formatInstant(it))
     }
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(InteractiveShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = true),
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
         shape = InteractiveShape,
         color = background,
         border = BorderStroke(1.dp, borderColor),

@@ -1,6 +1,9 @@
 // app/src/main/java/com/example/healthcodex/ui/measurements/DeviceConnectScreen.kt
 package com.example.healthcodex.ui.measurements
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,8 +49,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -380,22 +386,26 @@ private fun DeviceTypeSelectorField(selected: MutableState<MeasurementDeviceType
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TypeChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        enabled = true,
-        role = Role.RadioButton,
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val colors = MaterialTheme.colorScheme
+    val background = if (selected) colors.primary else colors.surfaceVariant
+    val contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(background)
+            .clickable(
+                role = Role.RadioButton,
+                interactionSource = interactionSource,
+                indication = rememberRipple(bounded = true),
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.labelLarge
-        )
+        Text(text = label, style = MaterialTheme.typography.labelLarge, color = contentColor)
     }
 }
 
