@@ -450,6 +450,7 @@ private fun MeasurementsList(
     onDismissError: () -> Unit
 ) {
     val listState = rememberLazyListState()
+    val showAddDeviceHint = uiState.connectedDevices.isEmpty()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
@@ -468,7 +469,7 @@ private fun MeasurementsList(
             FilterSummaryRow(
                 filter = uiState.filter,
                 connectedDevices = uiState.connectedDevices,
-                showAddDeviceHint = uiState.showAddDeviceHint,
+                showAddDeviceHint = showAddDeviceHint,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp),

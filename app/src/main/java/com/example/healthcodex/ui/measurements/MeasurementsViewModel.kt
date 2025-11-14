@@ -137,10 +137,7 @@ class MeasurementsViewModel(
                     }
                 }
                 _uiState.update {
-                    it.copy(
-                        connectedDevices = sorted,
-                        showAddDeviceHint = sorted.isEmpty()
-                    )
+                    it.copy(connectedDevices = sorted)
                 }
             }
         }
@@ -418,8 +415,7 @@ data class MeasurementsUiState(
     val bleDeviceName: String? = null,
     val connectedDevices: List<ConnectedDevice> = emptyList(),
     val filteredEntries: List<MeasurementEntry> = emptyList(),
-    val errorMessage: String? = null,
-    val showAddDeviceHint: Boolean = false
+    val errorMessage: String? = null
 )
 
 /** Group of measurements for a specific day. */
