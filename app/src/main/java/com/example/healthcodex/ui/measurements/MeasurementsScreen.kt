@@ -572,7 +572,6 @@ private fun FilterSummaryRow(
     val deviceLabel = filter.deviceId?.let { id ->
         connectedDevices.firstOrNull { it.id == id }?.name
     } ?: filter.deviceName
-    val showAddDeviceHint = connectedDevices.isEmpty()
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -684,7 +683,7 @@ private fun FilterSummaryRow(
                 leadingIcon = { Icon(imageVector = Icons.Default.FilterList, contentDescription = null) },
                 shape = InteractiveShape
             )
-            if (showAddDeviceHint && filter.deviceId == null) {
+            if (connectedDevices.isEmpty() && filter.deviceId == null) {
                 AssistChip(
                     onClick = onOpenFilters,
                     label = { Text(stringResource(id = R.string.measure_filter_summary_add_device)) },
