@@ -44,6 +44,7 @@
     <string name="measure_filter_summary_ranges">Диапазоны: %1$d</string>
     <string name="measure_filter_summary_query">Поиск: "%1$s"</string>
     <string name="measure_filter_summary_open">Изменить фильтры</string>
+    <string name="measure_filter_summary_add_device">Добавить устройство</string>
     <string name="measure_period_today">Сегодня</string>
     <string name="measure_period_week">Неделя</string>
     <string name="measure_period_month">Месяц</string>

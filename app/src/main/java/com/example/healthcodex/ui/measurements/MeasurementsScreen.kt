@@ -44,6 +44,7 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -467,6 +468,7 @@ private fun MeasurementsList(
             FilterSummaryRow(
                 filter = uiState.filter,
                 connectedDevices = uiState.connectedDevices,
+                showAddDeviceHint = uiState.showAddDeviceHint,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp),
@@ -563,6 +565,7 @@ private fun MeasurementsErrorCard(
 private fun FilterSummaryRow(
     filter: MeasurementFilter,
     connectedDevices: List<ConnectedDevice>,
+    showAddDeviceHint: Boolean,
     modifier: Modifier = Modifier,
     onOpenFilters: () -> Unit
 ) {
@@ -682,6 +685,19 @@ private fun FilterSummaryRow(
                 leadingIcon = { Icon(imageVector = Icons.Default.FilterList, contentDescription = null) },
                 shape = InteractiveShape
             )
+            if (showAddDeviceHint && filter.deviceId == null) {
+                AssistChip(
+                    onClick = onOpenFilters,
+                    label = { Text(stringResource(id = R.string.measure_filter_summary_add_device)) },
+                    leadingIcon = { Icon(imageVector = Icons.Default.DevicesOther, contentDescription = null) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        leadingIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    shape = InteractiveShape
+                )
+            }
         }
     }
 }
