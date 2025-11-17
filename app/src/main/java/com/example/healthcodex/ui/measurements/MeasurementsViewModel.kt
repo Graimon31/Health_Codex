@@ -3,6 +3,7 @@ package com.example.healthcodex.ui.measurements
 
 import android.content.Context
 import com.example.healthcodex.HealthCodexApp
+import com.example.healthcodex.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -42,7 +43,8 @@ import kotlinx.coroutines.launch
  */
 class MeasurementsViewModel(
     private val repository: MeasurementsRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val appContext: Context
 ) : ViewModel() {
 
     private val filterState = MutableStateFlow(MeasurementFilter())
@@ -148,6 +150,17 @@ class MeasurementsViewModel(
             _uiState.update { it.copy(isRefreshing = true, errorMessage = null) }
             delay(350)
             _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    /** Shows contextual hint prompting the user to connect a device. */
+    fun showAddDeviceHint() {
+        viewModelScope.launch {
+            _events.emit(
+                MeasurementsEvent.ShowMessage(
+                    appContext.getString(R.string.measure_filter_summary_add_device_hint)
+                )
+            )
         }
     }
 
@@ -395,7 +408,7 @@ class MeasurementsViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MeasurementsViewModel::class.java)) {
                         @Suppress("UNCHECKED_CAST")
-                        return MeasurementsViewModel(measurementsRepository, profileRepository) as T
+                        return MeasurementsViewModel(measurementsRepository, profileRepository, appContext) as T
                     }
                     throw IllegalArgumentException("Unknown ViewModel class: ${'$'}modelClass")
                 }

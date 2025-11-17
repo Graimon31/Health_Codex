@@ -45,6 +45,7 @@
     <string name="measure_filter_summary_query">Поиск: "%1$s"</string>
     <string name="measure_filter_summary_open">Изменить фильтры</string>
     <string name="measure_filter_summary_add_device">Добавить устройство</string>
+    <string name="measure_filter_summary_add_device_hint">Подключите устройство через раздел «Bluetooth устройства», чтобы видеть данные в ленте.</string>
     <string name="measure_period_today">Сегодня</string>
     <string name="measure_period_week">Неделя</string>
     <string name="measure_period_month">Месяц</string>

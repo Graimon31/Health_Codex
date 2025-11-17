@@ -223,6 +223,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             onClear = { viewModel.clearFilters() },
             onCustomPeriod = { start, end -> viewModel.setCustomPeriod(start, end) },
             onAddDevice = {
+                viewModel.showAddDeviceHint()
                 filterSheetVisible = false
                 navController.navigate(MeasurementsNav.devices) {
                     launchSingleTop = true
