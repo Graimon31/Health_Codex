@@ -134,7 +134,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.ripple.rememberRipple
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.getStateFlow
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.R
@@ -189,7 +189,8 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
     LaunchedEffect(navController) {
         val handle = navController.currentBackStackEntry?.savedStateHandle
         handle
-            ?.getStateFlow<String?>("measurements_device_linked", null)
+            ?.getLiveData<String?>("measurements_device_linked")
+            ?.asFlow()
             ?.collect { name ->
                 if (!name.isNullOrBlank()) {
                     snackbarHostState.showSnackbar(
