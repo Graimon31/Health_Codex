@@ -3,7 +3,9 @@ package com.example.healthcodex.feature.forecast
 
 import com.example.healthcodex.data.profile.UserProfile
 import com.example.healthcodex.util.Validation
+import kotlin.math.exp
 import kotlin.math.pow
+import kotlin.math.tanh
 
 /**
  * Produces a lightweight health forecast based on the stored profile metrics.
@@ -12,6 +14,7 @@ object ForecastAnalyzer {
     private const val BMI_NORMAL_LOW = 18.5
     private const val BMI_NORMAL_HIGH = 24.9
     private const val BMI_OVERWEIGHT = 30.0
+    private val neuralModel = HealthRiskNeuralModel()
 
     fun analyze(profile: UserProfile?): HealthForecast {
         if (profile == null) {
@@ -38,6 +41,20 @@ object ForecastAnalyzer {
 
         val age = profile.birthDate?.let { Validation.calculateAge(it) }
         val bmiValue = calculateBmiValue(profile.heightCm, profile.weightKg)
+
+        val riskProbability = neuralModel.predictRisk(profile, age, bmiValue)
+        val modelInsightSeverity = when {
+            riskProbability >= 0.75 -> InsightSeverity.CRITICAL
+            riskProbability >= 0.55 -> InsightSeverity.WARNING
+            else -> InsightSeverity.POSITIVE
+        }
+        val modelInsight = WellnessInsight(
+            title = "Оценка нейросети",
+            message = "Вероятность ухудшения состояния: %s%%".format(
+                "%.1f".format((riskProbability * 100).coerceIn(0.0, 100.0))
+            ),
+            severity = modelInsightSeverity
+        )
 
         age?.let {
             when {
@@ -124,6 +141,11 @@ object ForecastAnalyzer {
             }
         }
 
+        when (modelInsightSeverity) {
+            InsightSeverity.POSITIVE -> positive += modelInsight
+            InsightSeverity.WARNING, InsightSeverity.CRITICAL -> risks += modelInsight
+        }
+
         if (profile.conditions.isNotEmpty()) {
             risks += WellnessInsight(
                 title = "Хронические состояния",
@@ -156,27 +178,18 @@ object ForecastAnalyzer {
             )
         }
 
-        val riskScore = risks.fold(initial = 0) { acc, insight ->
-            val score = when (insight.severity) {
-                InsightSeverity.POSITIVE -> 0
-                InsightSeverity.WARNING -> 1
-                InsightSeverity.CRITICAL -> 2
-            }
-            acc + score
-        }
-
         val headline = when {
-            riskScore >= 5 -> "Прогноз требует немедленного внимания"
-            riskScore in 3..4 -> "Прогноз настораживает"
-            riskScore in 1..2 -> "Умеренный прогноз"
+            riskProbability >= 0.75 -> "Прогноз требует немедленного внимания"
+            riskProbability >= 0.55 -> "Прогноз настораживает"
+            riskProbability >= 0.35 -> "Умеренный прогноз"
             else -> "Прогноз благоприятный"
         }
 
         val detail = when {
-            riskScore >= 5 -> "Несколько факторов риска усиливают вероятность ухудшения состояния в ближайшие месяцы."
-            riskScore in 3..4 -> "Часть показателей выходит за рамки нормы — стоит пересмотреть образ жизни и план лечения."
-            riskScore in 1..2 -> "Отдельные показатели требуют контроля, но серьёзных угроз не выявлено."
-            else -> "Показатели в норме, сохраняйте текущий образ жизни и наблюдение."
+            riskProbability >= 0.75 -> "Нейросетевая модель фиксирует высокий комплексный риск, обсудите план действий с врачом."
+            riskProbability >= 0.55 -> "Часть показателей выходит за рамки нормы — скорректируйте образ жизни и наблюдайтесь чаще."
+            riskProbability >= 0.35 -> "Есть факторы, требующие контроля, следуйте рекомендациям и отслеживайте динамику."
+            else -> "Показатели в норме, сохраняйте текущий образ жизни и контроль ключевых метрик."
         }
 
         if (recommendations.isEmpty()) {
@@ -242,4 +255,84 @@ object ForecastAnalyzer {
             )
         }
     }
+}
+
+/** Lightweight fully-connected neural network for heuristic health-risk scoring. */
+private class HealthRiskNeuralModel {
+    private val w1 = arrayOf(
+        doubleArrayOf(1.4, 1.0, 1.1, 0.8, 0.9, 0.8, 0.7, 0.4, -0.9),
+        doubleArrayOf(0.6, 0.5, 0.4, 0.4, 0.5, 0.3, 0.3, 0.2, -0.4),
+        doubleArrayOf(1.1, 0.8, 0.9, 0.7, 0.6, 0.5, 0.6, 0.5, -0.6),
+        doubleArrayOf(0.3, 0.2, 0.3, 0.2, 0.3, 0.2, 0.2, 0.2, -0.2),
+        doubleArrayOf(1.0, 0.9, 0.4, 0.3, 0.3, 0.7, 0.4, 0.4, -0.7),
+        doubleArrayOf(0.7, 0.6, 0.5, 0.4, 0.5, 0.5, 0.6, 0.3, -0.5)
+    )
+    private val b1 = doubleArrayOf(-1.2, -0.3, -0.8, 0.0, -0.9, -0.7)
+
+    private val w2 = arrayOf(
+        doubleArrayOf(1.1, 0.8, 1.0, 0.3, 0.9, 0.8),
+        doubleArrayOf(0.5, 0.4, 0.3, 0.2, 0.5, 0.3),
+        doubleArrayOf(0.8, 0.6, 0.7, 0.3, 0.6, 0.6),
+        doubleArrayOf(0.4, 0.3, 0.4, 0.2, 0.3, 0.4)
+    )
+    private val b2 = doubleArrayOf(-0.6, -0.2, -0.4, -0.1)
+
+    private val wOut = doubleArrayOf(1.2, 0.6, 1.0, 0.4)
+    private const val bOut = -0.8
+
+    fun predictRisk(profile: UserProfile, age: Int?, bmi: Double?): Double {
+        val features = buildFeatures(profile, age, bmi)
+        return predict(features)
+    }
+
+    private fun buildFeatures(profile: UserProfile, age: Int?, bmi: Double?): DoubleArray {
+        val ageNorm = (age ?: 0).coerceIn(0, 120) / 120.0
+        val bmiNorm = bmi?.coerceIn(15.0, 40.0)?.let { (it - 15.0) / 25.0 } ?: 0.28
+        val sysNorm = profile.bpBaselineSystolic?.coerceIn(80, 200)?.let { (it - 80) / 120.0 } ?: 0.25
+        val diaNorm = profile.bpBaselineDiastolic?.coerceIn(50, 130)?.let { (it - 50) / 80.0 } ?: 0.25
+        val hrNorm = profile.restingHr?.coerceIn(40, 190)?.let { (it - 40) / 150.0 } ?: 0.2
+        val conditionsNorm = (profile.conditions.size.coerceAtMost(8)) / 8.0
+        val medicationsNorm = (profile.medications.size.coerceAtMost(8)) / 8.0
+        val allergiesNorm = (profile.allergies.size.coerceAtMost(6)) / 6.0
+        val doctorBoost = if (profile.shareWithDoctor) 1.0 else 0.0
+        return doubleArrayOf(
+            ageNorm,
+            bmiNorm,
+            sysNorm,
+            diaNorm,
+            hrNorm,
+            conditionsNorm,
+            medicationsNorm,
+            allergiesNorm,
+            doctorBoost
+        )
+    }
+
+    private fun predict(input: DoubleArray): Double {
+        val h1 = DoubleArray(b1.size)
+        for (i in h1.indices) {
+            h1[i] = b1[i]
+            for (j in input.indices) {
+                h1[i] += w1[i][j] * input[j]
+            }
+            h1[i] = tanh(h1[i])
+        }
+
+        val h2 = DoubleArray(b2.size)
+        for (i in h2.indices) {
+            h2[i] = b2[i]
+            for (j in h1.indices) {
+                h2[i] += w2[i][j] * h1[j]
+            }
+            h2[i] = tanh(h2[i])
+        }
+
+        var out = bOut
+        for (i in wOut.indices) {
+            out += wOut[i] * h2[i]
+        }
+        return sigmoid(out).coerceIn(0.0, 1.0)
+    }
+
+    private fun sigmoid(x: Double): Double = 1.0 / (1.0 + exp(-x))
 }
