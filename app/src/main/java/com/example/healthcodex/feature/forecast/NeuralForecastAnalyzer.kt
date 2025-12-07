@@ -17,24 +17,18 @@ import org.tensorflow.lite.Interpreter
  */
 class NeuralForecastAnalyzer(
     private val context: Context?,
-    private val interpreterFactory: ((ByteBuffer) -> Interpreter)? = null
+    private val interpreterFactory: ((ByteBuffer) -> Interpreter)? = null,
+    /** Optional inference override for unit tests. */
+    private val inferenceOverride: ((FloatArray) -> FloatArray)? = null
 ) {
 
     /** Returns risk probability in [0, 1], or null if the model cannot be evaluated. */
     fun analyze(profile: UserProfile): Double? {
-        val interpreter = interpreter ?: return null
         val features = buildFeatureVector(profile) ?: return null
-        val output = Array(1) { FloatArray(OUTPUT_CLASSES) }
-        return runCatching {
-            interpreter.run(arrayOf(features), output)
-            output[0].let { probs ->
-                val maxProb = probs.maxOrNull() ?: return@let null
-                maxProb.toDouble().coerceIn(0.0, 1.0)
-            }
-        }.getOrElse { error ->
-            Log.w(TAG, "TFLite inference failed", error)
-            null
-        }
+        val probabilities = inferenceOverride?.invoke(features)
+            ?: runModel(features)
+            ?: return null
+        return extractRiskProbability(probabilities)
     }
 
     private fun buildFeatureVector(profile: UserProfile): FloatArray? {
@@ -46,6 +40,7 @@ class NeuralForecastAnalyzer(
         }
 
         val features = mutableListOf<Float>()
+        // Numeric features normalized to [0,1]
         features += normalize(age?.toDouble(), 0.0, 120.0)
         features += when (profile.sex) {
             Sex.MALE -> floatArrayOf(1f, 0f, 0f)
@@ -59,11 +54,9 @@ class NeuralForecastAnalyzer(
         features += normalize(profile.bpBaselineDiastolic?.toDouble(), 40.0, 150.0)
         features += normalize(profile.restingHr?.toDouble(), 30.0, 220.0)
 
+        // One-hot categorical signals
         features += encodeCategories(profile.conditions, CONDITION_BUCKETS)
         features += encodeCategories(profile.allergies, ALLERGY_BUCKETS)
-
-        features += normalize(profile.medications.size.toDouble(), 0.0, 12.0)
-        features += if (profile.shareWithDoctor) 1f else 0f
 
         return features.toFloatArray()
     }
@@ -101,6 +94,43 @@ class NeuralForecastAnalyzer(
         }
     }
 
+    private fun runModel(features: FloatArray): FloatArray? {
+        val interpreter = interpreter ?: return null
+        return runCatching {
+            val outputShape = interpreter.getOutputTensor(0).shape()
+            when {
+                outputShape.size == 2 -> {
+                    val classes = outputShape[1]
+                    val output = Array(1) { FloatArray(classes) }
+                    interpreter.run(arrayOf(features), output)
+                    output[0]
+                }
+                outputShape.size == 1 && outputShape[0] == 1 -> {
+                    val output = FloatArray(1)
+                    interpreter.run(arrayOf(features), output)
+                    output
+                }
+                else -> {
+                    Log.w(TAG, "Unexpected output shape: ${outputShape.toList()}")
+                    null
+                }
+            }
+        }.getOrElse { error ->
+            Log.w(TAG, "TFLite inference failed", error)
+            null
+        }
+    }
+
+    private fun extractRiskProbability(probabilities: FloatArray): Double? {
+        if (probabilities.isEmpty()) return null
+        val prob = when {
+            probabilities.size == 1 -> probabilities[0]
+            probabilities.size >= 3 -> probabilities.getOrNull(HIGH_RISK_CLASS_INDEX) ?: probabilities.maxOrNull()
+            else -> probabilities.maxOrNull()
+        } ?: return null
+        return prob.toDouble().coerceIn(0.0, 1.0)
+    }
+
     private fun loadModelFile(context: Context, assetPath: String): ByteBuffer {
         val file = context.cacheDir.resolve(MODEL_TMP_NAME)
         context.assets.open(assetPath).use { input ->
@@ -115,7 +145,7 @@ class NeuralForecastAnalyzer(
         private const val TAG = "NeuralForecastAnalyzer"
         private const val MODEL_ASSET = "ml/health_forecast_model.tflite"
         private const val MODEL_TMP_NAME = "health_forecast_model.tflite"
-        private const val OUTPUT_CLASSES = 3
+        private const val HIGH_RISK_CLASS_INDEX = 2
         private val CONDITION_BUCKETS = listOf(
             "гиперто", "диабет", "астма", "хобл", "cardio", "renal", "метаб",
             "onco", "проч" // last acts as "other"

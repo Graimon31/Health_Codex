@@ -26,6 +26,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlin.math.roundToInt
 
 /**
  * Entry point for the forecast screen to be used inside navigation.
@@ -163,16 +165,28 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
             if (!forecast.profileMissing && forecast.riskProbability != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+                val percent = (forecast.riskProbability * 100).roundToInt().coerceIn(0, 100)
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Вероятность риска: %.1f%%".format(
-                        (forecast.riskProbability * 100).coerceIn(0.0, 100.0)
-                    ),
+                    text = "Вероятность риска: $percent%",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = forecast.riskProbability.toFloat().coerceIn(0f, 1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp),
+                    color = when {
+                        percent < 33 -> Color(0xFF2E7D32)
+                        percent < 66 -> Color(0xFFF57F17)
+                        else -> Color(0xFFC62828)
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (forecast.usedTflite) "Источник: TFLite модель" else "Источник: резервный расчёт",
+                    text = if (forecast.usedTflite) "Прогноз с использованием нейросети" else "Прогноз по эвристике профиля",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -183,7 +197,15 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
                 Spacer(modifier = Modifier.height(12.dp))
                 AssistChip(
                     onClick = {},
-                    label = { Text("Обновлено на основе профиля") },
+                    label = {
+                        Text(
+                            if (forecast.usedTflite) {
+                                "Прогноз с использованием нейросети"
+                            } else {
+                                "Обновлено на основе профиля"
+                            }
+                        )
+                    },
                     leadingIcon = {
                         Icon(Icons.Filled.Info, contentDescription = null)
                     },

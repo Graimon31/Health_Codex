@@ -22,6 +22,7 @@ class ForecastAnalyzerTest {
         assertTrue(forecast.profileMissing)
         assertTrue(forecast.riskInsights.isNotEmpty())
         assertTrue(forecast.recommendations.any { it.contains("Профиль", ignoreCase = true) })
+        assertEquals(null, forecast.riskProbability)
     }
 
     @Test
@@ -61,5 +62,6 @@ class ForecastAnalyzerTest {
         assertTrue(forecast.riskInsights.isEmpty())
         assertTrue(forecast.positiveInsights.isNotEmpty())
         assertEquals("Прогноз благоприятный", forecast.headline)
+        assertEquals(null, forecast.riskProbability)
     }
 }
