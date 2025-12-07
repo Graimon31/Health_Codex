@@ -86,6 +86,9 @@ dependencies {
 
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
+    // On-device neural forecast inference
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

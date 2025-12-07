@@ -34,7 +34,7 @@ class ForecastViewModel(application: Application) : AndroidViewModel(application
             repository.profileFlow.collectLatest { profile ->
                 _state.value = ForecastViewState(
                     isLoading = false,
-                    forecast = ForecastAnalyzer.analyze(profile)
+                    forecast = ForecastAnalyzer.analyze(profile, getApplication())
                 )
             }
         }

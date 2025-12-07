@@ -163,6 +163,19 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
             if (!forecast.profileMissing) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Вероятность риска: %.1f%%".format((forecast.riskProbability * 100).coerceIn(0.0, 100.0)),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (forecast.usedTflite) "Источник: TFLite модель" else "Источник: резервный расчёт",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (!forecast.profileMissing) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(12.dp))
