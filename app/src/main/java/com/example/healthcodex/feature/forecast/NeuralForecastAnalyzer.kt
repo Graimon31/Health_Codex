@@ -4,193 +4,124 @@ package com.example.healthcodex.feature.forecast
 import android.content.Context
 import android.util.Log
 import com.example.healthcodex.data.profile.UserProfile
-import java.io.File
+import com.example.healthcodex.data.profile.sex.Sex
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
-import kotlin.math.abs
-import kotlin.math.exp
-import kotlin.math.tanh
+import kotlin.math.max
 import org.tensorflow.lite.Interpreter
 
 /**
- * Wraps on-device TensorFlow Lite inference for the forecast module. Falls back to a
- * lightweight heuristic neural scorer when the model file is missing or invalid.
+ * Runs on-device TensorFlow Lite inference for the forecast module. The model lives in
+ * [app/src/main/assets/ml/health_forecast_model.tflite] and is evaluated fully offline.
  */
 class NeuralForecastAnalyzer(
-    private val fallbackModel: LegacyRiskModel = LegacyRiskModel()
+    private val context: Context?,
+    private val interpreterFactory: ((ByteBuffer) -> Interpreter)? = null
 ) {
 
-    data class Result(
-        val probability: Double,
-        val topFactors: List<FeatureContribution>,
-        val usedTflite: Boolean
-    )
-
-    data class FeatureContribution(
-        val label: String,
-        val impact: Double
-    )
-
-    fun analyze(context: Context?, profile: UserProfile, bmi: Double?, age: Int?): Result {
-        val normalized = normalize(profile, bmi, age)
-        val tfliteProbability = context?.let { ctx ->
-            runCatching { runTflite(ctx, normalized.values.toFloatArray()) }.getOrElse { error ->
-                Log.w(TAG, "TFLite forecast fallback", error)
-                null
+    /** Returns risk probability in [0, 1], or null if the model cannot be evaluated. */
+    fun analyze(profile: UserProfile): Double? {
+        val interpreter = interpreter ?: return null
+        val features = buildFeatureVector(profile) ?: return null
+        val output = Array(1) { FloatArray(OUTPUT_CLASSES) }
+        return runCatching {
+            interpreter.run(arrayOf(features), output)
+            output[0].let { probs ->
+                val maxProb = probs.maxOrNull() ?: return@let null
+                maxProb.toDouble().coerceIn(0.0, 1.0)
             }
+        }.getOrElse { error ->
+            Log.w(TAG, "TFLite inference failed", error)
+            null
+        }
+    }
+
+    private fun buildFeatureVector(profile: UserProfile): FloatArray? {
+        val age = profile.birthDate?.let { com.example.healthcodex.util.Validation.calculateAge(it) }
+        val height = profile.heightCm
+        val weight = profile.weightKg
+        val bmi = profile.heightCm?.takeIf { it > 0 }?.let { h ->
+            weight?.div((h / 100.0).toFloat() * (h / 100.0).toFloat())
         }
 
-        if (tfliteProbability != null) {
-            return Result(
-                probability = tfliteProbability,
-                topFactors = normalized.toContributions(),
-                usedTflite = true
-            )
-        }
+        val features = mutableListOf<Float>()
+        features += normalize(age?.toDouble(), 0.0, 120.0)
+        features += when (profile.sex) {
+            Sex.MALE -> floatArrayOf(1f, 0f, 0f)
+            Sex.FEMALE -> floatArrayOf(0f, 1f, 0f)
+            Sex.OTHER -> floatArrayOf(0f, 0f, 1f)
+        }.toList()
+        features += normalize(height?.toDouble(), 50.0, 250.0)
+        features += normalize(weight?.toDouble(), 20.0, 400.0)
+        features += normalize(bmi?.toDouble(), 15.0, 45.0)
+        features += normalize(profile.bpBaselineSystolic?.toDouble(), 70.0, 250.0)
+        features += normalize(profile.bpBaselineDiastolic?.toDouble(), 40.0, 150.0)
+        features += normalize(profile.restingHr?.toDouble(), 30.0, 220.0)
 
-        val fallbackProb = fallbackModel.predictRisk(profile, age, bmi)
-        return Result(
-            probability = fallbackProb,
-            topFactors = normalized.toContributions(),
-            usedTflite = false
-        )
+        features += encodeCategories(profile.conditions, CONDITION_BUCKETS)
+        features += encodeCategories(profile.allergies, ALLERGY_BUCKETS)
+
+        features += normalize(profile.medications.size.toDouble(), 0.0, 12.0)
+        features += if (profile.shareWithDoctor) 1f else 0f
+
+        return features.toFloatArray()
     }
 
-    private fun Map<String, Double>.toContributions(): List<FeatureContribution> =
-        entries
-            .sortedByDescending { abs(it.value) }
-            .take(5)
-            .map { FeatureContribution(it.key, it.value) }
-
-    private fun normalize(
-        profile: UserProfile,
-        bmi: Double?,
-        age: Int?
-    ): Map<String, Double> {
-        val bmiNorm = bmi?.coerceIn(15.0, 40.0)?.let { (it - 15.0) / 25.0 } ?: 0.28
-        return mapOf(
-            "Возраст" to (age ?: 0).coerceIn(0, 120) / 120.0,
-            "BMI" to bmiNorm,
-            "Систолическое давление" to (profile.bpBaselineSystolic?.coerceIn(80, 200)
-                ?.let { (it - 80) / 120.0 } ?: 0.25),
-            "Диастолическое давление" to (profile.bpBaselineDiastolic?.coerceIn(50, 130)
-                ?.let { (it - 50) / 80.0 } ?: 0.25),
-            "Пульс в покое" to (profile.restingHr?.coerceIn(40, 190)?.let { (it - 40) / 150.0 }
-                ?: 0.2),
-            "Хронические состояния" to (profile.conditions.size.coerceAtMost(8)) / 8.0,
-            "Медикаменты" to (profile.medications.size.coerceAtMost(8)) / 8.0,
-            "Аллергии" to (profile.allergies.size.coerceAtMost(6)) / 6.0,
-            "Совместное ведение" to if (profile.shareWithDoctor) 1.0 else 0.0
-        )
-    }
-
-    private fun runTflite(context: Context, features: FloatArray): Double {
-        val buffer = loadModelFile(context, MODEL_FILE)
-        val interpreter = Interpreter(buffer, Interpreter.Options().apply { setNumThreads(2) })
-        val input = arrayOf(features)
-        val output = Array(1) { FloatArray(1) }
-        interpreter.use { it.run(input, output) }
-        return output[0][0].toDouble().coerceIn(0.0, 1.0)
-    }
-
-    private fun loadModelFile(context: Context, assetName: String): ByteBuffer {
-        val file = File(context.filesDir, assetName)
-        if (!file.exists()) {
-            context.assets.open(assetName).use { input ->
-                file.outputStream().use { output ->
-                    input.copyTo(output)
-                }
+    private fun encodeCategories(values: List<String>, buckets: List<String>): List<Float> {
+        val lowered = values.map { it.lowercase() }
+        val hits = MutableList(buckets.size) { 0f }
+        lowered.forEach { value ->
+            val index = buckets.indexOfFirst { bucket -> value.contains(bucket) }
+            if (index >= 0) {
+                hits[index] = 1f
+            } else {
+                // Last position acts as "other" to preserve alignment.
+                hits[hits.lastIndex] = 1f
             }
+        }
+        return hits
+    }
+
+    private fun normalize(value: Double?, min: Double, max: Double): Float {
+        if (value == null) return 0f
+        val clamped = value.coerceIn(min, max)
+        return ((clamped - min) / max(max - min, 1e-3)).toFloat()
+    }
+
+    private val interpreter: Interpreter? by lazy {
+        val ctx = context ?: return@lazy null
+        runCatching {
+            val asset = loadModelFile(ctx, MODEL_ASSET)
+            interpreterFactory?.invoke(asset)
+                ?: Interpreter(asset, Interpreter.Options().apply { setNumThreads(2) })
+        }.getOrElse {
+            Log.w(TAG, "Unable to load TFLite model", it)
+            null
+        }
+    }
+
+    private fun loadModelFile(context: Context, assetPath: String): ByteBuffer {
+        val file = context.cacheDir.resolve(MODEL_TMP_NAME)
+        context.assets.open(assetPath).use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
         }
         FileInputStream(file).channel.use { channel ->
-            val mapped = channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length())
-            return mapped.load()
+            return channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length()).load()
         }
     }
 
     companion object {
         private const val TAG = "NeuralForecastAnalyzer"
-        private const val MODEL_FILE = "forecast_model.tflite"
-    }
-}
-
-/** Legacy lightweight model kept as a deterministic fallback. */
-class LegacyRiskModel {
-    private val w1 = arrayOf(
-        doubleArrayOf(1.4, 1.0, 1.1, 0.8, 0.9, 0.8, 0.7, 0.4, -0.9),
-        doubleArrayOf(0.6, 0.5, 0.4, 0.4, 0.5, 0.3, 0.3, 0.2, -0.4),
-        doubleArrayOf(1.1, 0.8, 0.9, 0.7, 0.6, 0.5, 0.6, 0.5, -0.6),
-        doubleArrayOf(0.3, 0.2, 0.3, 0.2, 0.3, 0.2, 0.2, 0.2, -0.2),
-        doubleArrayOf(1.0, 0.9, 0.4, 0.3, 0.3, 0.7, 0.4, 0.4, -0.7),
-        doubleArrayOf(0.7, 0.6, 0.5, 0.4, 0.5, 0.5, 0.6, 0.3, -0.5)
-    )
-    private val b1 = doubleArrayOf(-1.2, -0.3, -0.8, 0.0, -0.9, -0.7)
-
-    private val w2 = arrayOf(
-        doubleArrayOf(1.1, 0.8, 1.0, 0.3, 0.9, 0.8),
-        doubleArrayOf(0.5, 0.4, 0.3, 0.2, 0.5, 0.3),
-        doubleArrayOf(0.8, 0.6, 0.7, 0.3, 0.6, 0.6),
-        doubleArrayOf(0.4, 0.3, 0.4, 0.2, 0.3, 0.4)
-    )
-    private val b2 = doubleArrayOf(-0.6, -0.2, -0.4, -0.1)
-
-    private val wOut = doubleArrayOf(1.2, 0.6, 1.0, 0.4)
-    private const val bOut = -0.8
-
-    fun predictRisk(profile: UserProfile, age: Int?, bmi: Double?): Double {
-        val features = buildFeatures(profile, age, bmi)
-        return predict(features)
-    }
-
-    private fun buildFeatures(profile: UserProfile, age: Int?, bmi: Double?): DoubleArray {
-        val ageNorm = (age ?: 0).coerceIn(0, 120) / 120.0
-        val bmiNorm = bmi?.coerceIn(15.0, 40.0)?.let { (it - 15.0) / 25.0 } ?: 0.28
-        val sysNorm = profile.bpBaselineSystolic?.coerceIn(80, 200)?.let { (it - 80) / 120.0 } ?: 0.25
-        val diaNorm = profile.bpBaselineDiastolic?.coerceIn(50, 130)?.let { (it - 50) / 80.0 } ?: 0.25
-        val hrNorm = profile.restingHr?.coerceIn(40, 190)?.let { (it - 40) / 150.0 } ?: 0.2
-        val conditionsNorm = (profile.conditions.size.coerceAtMost(8)) / 8.0
-        val medicationsNorm = (profile.medications.size.coerceAtMost(8)) / 8.0
-        val allergiesNorm = (profile.allergies.size.coerceAtMost(6)) / 6.0
-        val doctorBoost = if (profile.shareWithDoctor) 1.0 else 0.0
-        return doubleArrayOf(
-            ageNorm,
-            bmiNorm,
-            sysNorm,
-            diaNorm,
-            hrNorm,
-            conditionsNorm,
-            medicationsNorm,
-            allergiesNorm,
-            doctorBoost
+        private const val MODEL_ASSET = "ml/health_forecast_model.tflite"
+        private const val MODEL_TMP_NAME = "health_forecast_model.tflite"
+        private const val OUTPUT_CLASSES = 3
+        private val CONDITION_BUCKETS = listOf(
+            "гиперто", "диабет", "астма", "хобл", "cardio", "renal", "метаб",
+            "onco", "проч" // last acts as "other"
+        )
+        private val ALLERGY_BUCKETS = listOf(
+            "пыль", "пища", "лекар", "пыльца", "живот", "проч"
         )
     }
-
-    private fun predict(input: DoubleArray): Double {
-        val h1 = DoubleArray(b1.size)
-        for (i in h1.indices) {
-            h1[i] = b1[i]
-            for (j in input.indices) {
-                h1[i] += w1[i][j] * input[j]
-            }
-            h1[i] = tanh(h1[i])
-        }
-
-        val h2 = DoubleArray(b2.size)
-        for (i in h2.indices) {
-            h2[i] = b2[i]
-            for (j in h1.indices) {
-                h2[i] += w2[i][j] * h1[j]
-            }
-            h2[i] = tanh(h2[i])
-        }
-
-        var out = bOut
-        for (i in wOut.indices) {
-            out += wOut[i] * h2[i]
-        }
-        return sigmoid(out).coerceIn(0.0, 1.0)
-    }
-
-    private fun sigmoid(x: Double): Double = 1.0 / (1.0 + exp(-x))
 }

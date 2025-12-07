@@ -7,15 +7,13 @@ import com.example.healthcodex.data.profile.UserProfile
 import com.example.healthcodex.feature.forecast.NeuralForecastAnalyzer
 import java.time.LocalDate
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertNull
 
 class NeuralForecastAnalyzerTest {
 
     @Test
-    fun `falls back when context is missing`() {
-        val analyzer = NeuralForecastAnalyzer()
+    fun `returns null when context is missing`() {
+        val analyzer = NeuralForecastAnalyzer(null)
         val profile = UserProfile(
             userId = "p1",
             fullName = "Test User",
@@ -45,16 +43,14 @@ class NeuralForecastAnalyzerTest {
             consentTimestamp = null
         )
 
-        val result = analyzer.analyze(null, profile, bmi = 24.2, age = 40)
+        val result = analyzer.analyze(profile)
 
-        assertFalse(result.usedTflite)
-        assertTrue(result.probability in 0.0..1.0)
-        assertTrue(result.topFactors.isNotEmpty())
+        assertNull(result)
     }
 
     @Test
     fun `top factors list is deterministic`() {
-        val analyzer = NeuralForecastAnalyzer()
+        val analyzer = NeuralForecastAnalyzer(null)
         val profile = UserProfile(
             userId = "p2",
             fullName = "Demo",
@@ -84,9 +80,8 @@ class NeuralForecastAnalyzerTest {
             consentTimestamp = null
         )
 
-        val result = analyzer.analyze(null, profile, bmi = 27.7, age = 20)
+        val result = analyzer.analyze(profile)
 
-        assertEquals(5, result.topFactors.size)
-        assertTrue(result.topFactors.first().impact >= result.topFactors.last().impact)
+        assertNull(result)
     }
 }

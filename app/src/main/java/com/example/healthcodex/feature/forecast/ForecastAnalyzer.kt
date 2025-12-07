@@ -1,7 +1,6 @@
 // app/src/main/java/com/example/healthcodex/feature/forecast/ForecastAnalyzer.kt
 package com.example.healthcodex.feature.forecast
 
-import android.content.Context
 import com.example.healthcodex.data.profile.UserProfile
 import com.example.healthcodex.util.Validation
 import kotlin.math.pow
@@ -10,12 +9,11 @@ import kotlin.math.pow
  * Produces a lightweight health forecast based on the stored profile metrics.
  */
 object ForecastAnalyzer {
-    private val neuralAnalyzer = NeuralForecastAnalyzer()
     private const val BMI_NORMAL_LOW = 18.5
     private const val BMI_NORMAL_HIGH = 24.9
     private const val BMI_OVERWEIGHT = 30.0
 
-    fun analyze(profile: UserProfile?, context: Context? = null): HealthForecast {
+    fun analyze(profile: UserProfile?): HealthForecast {
         if (profile == null) {
             return HealthForecast(
                 headline = "Недостаточно данных",
@@ -41,31 +39,7 @@ object ForecastAnalyzer {
         val age = profile.birthDate?.let { Validation.calculateAge(it) }
         val bmiValue = calculateBmiValue(profile.heightCm, profile.weightKg)
 
-        val neuralResult = neuralAnalyzer.analyze(context, profile, bmiValue, age)
-        val riskProbability = neuralResult.probability
-        val factorInsights = neuralResult.topFactors.take(3)
-        factorInsights.forEach { factor ->
-            val impactPercent = (factor.impact * 100).coerceIn(0.0, 100.0)
-            val severity = if (impactPercent >= 55) InsightSeverity.WARNING else InsightSeverity.POSITIVE
-            val container = if (impactPercent >= 55) risks else positive
-            container += WellnessInsight(
-                title = "Фактор: ${factor.label}",
-                message = "Вклад нейросети: %.1f%%".format(impactPercent),
-                severity = severity
-            )
-        }
-        val modelInsightSeverity = when {
-            riskProbability >= 0.75 -> InsightSeverity.CRITICAL
-            riskProbability >= 0.55 -> InsightSeverity.WARNING
-            else -> InsightSeverity.POSITIVE
-        }
-        val modelInsight = WellnessInsight(
-            title = "Оценка нейросети",
-            message = "Вероятность ухудшения состояния: %s%%".format(
-                "%.1f".format((riskProbability * 100).coerceIn(0.0, 100.0))
-            ),
-            severity = modelInsightSeverity
-        )
+        val heuristicRisk = estimateRiskScore(age, bmiValue, profile)
 
         age?.let {
             when {
@@ -152,11 +126,6 @@ object ForecastAnalyzer {
             }
         }
 
-        when (modelInsightSeverity) {
-            InsightSeverity.POSITIVE -> positive += modelInsight
-            InsightSeverity.WARNING, InsightSeverity.CRITICAL -> risks += modelInsight
-        }
-
         if (profile.conditions.isNotEmpty()) {
             risks += WellnessInsight(
                 title = "Хронические состояния",
@@ -190,16 +159,16 @@ object ForecastAnalyzer {
         }
 
         val headline = when {
-            riskProbability >= 0.75 -> "Прогноз требует немедленного внимания"
-            riskProbability >= 0.55 -> "Прогноз настораживает"
-            riskProbability >= 0.35 -> "Умеренный прогноз"
+            heuristicRisk >= 0.75 -> "Прогноз требует немедленного внимания"
+            heuristicRisk >= 0.55 -> "Прогноз настораживает"
+            heuristicRisk >= 0.35 -> "Умеренный прогноз"
             else -> "Прогноз благоприятный"
         }
 
         val detail = when {
-            riskProbability >= 0.75 -> "Нейросетевая модель фиксирует высокий комплексный риск, обсудите план действий с врачом."
-            riskProbability >= 0.55 -> "Часть показателей выходит за рамки нормы — скорректируйте образ жизни и наблюдайтесь чаще."
-            riskProbability >= 0.35 -> "Есть факторы, требующие контроля, следуйте рекомендациям и отслеживайте динамику."
+            heuristicRisk >= 0.75 -> "Комплекс показателей указывает на высокий риск, обсудите план действий с врачом."
+            heuristicRisk >= 0.55 -> "Часть показателей выходит за рамки нормы — скорректируйте образ жизни и наблюдайтесь чаще."
+            heuristicRisk >= 0.35 -> "Есть факторы, требующие контроля, следуйте рекомендациям и отслеживайте динамику."
             else -> "Показатели в норме, сохраняйте текущий образ жизни и контроль ключевых метрик."
         }
 
@@ -214,9 +183,56 @@ object ForecastAnalyzer {
             riskInsights = risks.sortedByDescending { it.severity.ordinal },
             recommendations = recommendations.distinct(),
             profileMissing = false,
-            riskProbability = riskProbability,
-            usedTflite = neuralResult.usedTflite
+            riskProbability = heuristicRisk,
+            usedTflite = false
         )
+    }
+
+    private fun estimateRiskScore(age: Int?, bmi: Double?, profile: UserProfile): Double {
+        var score = 0.25
+        age?.let {
+            score += when {
+                it >= 75 -> 0.25
+                it >= 60 -> 0.18
+                it >= 45 -> 0.12
+                else -> 0.05
+            }
+        }
+        bmi?.let {
+            score += when {
+                it >= BMI_OVERWEIGHT -> 0.2
+                it > BMI_NORMAL_HIGH -> 0.1
+                it < BMI_NORMAL_LOW -> 0.08
+                else -> 0.0
+            }
+        }
+        profile.bpBaselineSystolic?.let { sys ->
+            profile.bpBaselineDiastolic?.let { dia ->
+                score += when {
+                    sys >= 140 || dia >= 90 -> 0.22
+                    sys in 130..139 || dia in 85..89 -> 0.12
+                    sys in 120..129 || dia in 80..84 -> 0.08
+                    else -> 0.0
+                }
+            }
+        }
+        profile.restingHr?.let { hr ->
+            score += when {
+                hr >= 95 || hr <= 48 -> 0.12
+                hr in 85..94 || hr in 49..55 -> 0.08
+                else -> 0.0
+            }
+        }
+        if (profile.conditions.isNotEmpty()) {
+            score += 0.12
+        }
+        if (profile.medications.isNotEmpty()) {
+            score += 0.05
+        }
+        if (profile.shareWithDoctor) {
+            score -= 0.05
+        }
+        return score.coerceIn(0.0, 1.0)
     }
 
     private fun calculateBmiValue(heightCm: Int?, weightKg: Float?): Double? {

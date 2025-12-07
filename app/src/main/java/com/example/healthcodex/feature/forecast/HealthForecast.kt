@@ -11,7 +11,7 @@ data class HealthForecast(
     val riskInsights: List<WellnessInsight> = emptyList(),
     val recommendations: List<String> = emptyList(),
     val profileMissing: Boolean = false,
-    val riskProbability: Double = 0.0,
+    val riskProbability: Double? = null,
     val usedTflite: Boolean = false
 )
 

@@ -162,10 +162,12 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
-            if (!forecast.profileMissing) {
+            if (!forecast.profileMissing && forecast.riskProbability != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Вероятность риска: %.1f%%".format((forecast.riskProbability * 100).coerceIn(0.0, 100.0)),
+                    text = "Вероятность риска: %.1f%%".format(
+                        (forecast.riskProbability * 100).coerceIn(0.0, 100.0)
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
