@@ -4,7 +4,7 @@ package com.example.healthcodex.feature.forecast
 import android.content.Context
 import android.util.Log
 import com.example.healthcodex.data.profile.UserProfile
-import com.example.healthcodex.data.profile.sex.Sex
+import com.example.healthcodex.data.profile.Sex
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
