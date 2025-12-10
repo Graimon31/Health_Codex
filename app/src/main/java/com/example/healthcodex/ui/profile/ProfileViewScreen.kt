@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Share
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -70,6 +72,16 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
     }
 
     val profile = state.profile
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            ProfileExportImport.importProfile(context, it) { imported ->
+                imported?.let { profileResult ->
+                    viewModel.updateField { _ -> ProfileForm.fromProfile(profileResult) }
+                    viewModel.saveProfile()
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Профиль") }) },
@@ -130,14 +142,7 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                     Text("Экспорт в JSON")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = {
-                    ProfileExportImport.importProfile(context) { imported ->
-                        imported?.let {
-                            viewModel.updateField { _ -> ProfileForm.fromProfile(it) }
-                            viewModel.saveProfile()
-                        }
-                    }
-                }) {
+                ElevatedButton(onClick = { importLauncher.launch(arrayOf("application/json")) }) {
                     Icon(Icons.Default.FileUpload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Импорт из JSON")

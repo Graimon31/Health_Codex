@@ -1,7 +1,6 @@
 // app/src/main/java/com/example/healthcodex/feature/profile/ExportImport.kt
 package com.example.healthcodex.feature.profile
 
-import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -12,6 +11,8 @@ import com.example.healthcodex.data.profile.UserProfile
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.time.LocalDate
+import android.net.Uri
+import java.io.InputStream
 
 /**
  * Helper object for JSON export/import and ICE sharing.
@@ -42,23 +43,20 @@ object ProfileExportImport {
         }
     }
 
-    fun importProfile(context: Context, onResult: (UserProfile?) -> Unit) {
+    fun importProfile(context: Context, uri: Uri, onResult: (UserProfile?) -> Unit) {
         val resolver = context.contentResolver
-        val collection = MediaStore.Files.getContentUri("external")
-        val projection = arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
-        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-        val selectionArgs = arrayOf("HealthProfile_%")
-        val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
         var profile: UserProfile? = null
-        resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val id = cursor.getLong(0)
-                val uri = ContentUris.withAppendedId(collection, id)
-                resolver.openInputStream(uri)?.use { stream ->
-                    val json = stream.bufferedReader().readText()
-                    profile = adapter.fromJson(json)
-                }
+        try {
+            resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (_: SecurityException) {
+            // If not persisted, we will still try reading once.
+        }
+        runCatching {
+            resolver.openInputStream(uri)?.use { stream ->
+                profile = parseProfile(stream)
             }
+        }.onFailure {
+            Toast.makeText(context, "Ошибка чтения файла профиля", Toast.LENGTH_SHORT).show()
         }
         if (profile == null) {
             Toast.makeText(context, "Файл профиля не найден", Toast.LENGTH_SHORT).show()
@@ -66,6 +64,13 @@ object ProfileExportImport {
             Toast.makeText(context, "Профиль импортирован", Toast.LENGTH_SHORT).show()
         }
         onResult(profile)
+    }
+
+    fun parseProfile(stream: InputStream): UserProfile? {
+        return runCatching {
+            val json = stream.bufferedReader().readText()
+            adapter.fromJson(json)
+        }.getOrNull()
     }
 
     fun shareIce(context: Context, profile: UserProfile) {
