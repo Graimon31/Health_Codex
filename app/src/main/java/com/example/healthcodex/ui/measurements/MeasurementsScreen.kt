@@ -22,13 +22,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
@@ -249,6 +250,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             .background(screenBackground)
             .padding(paddingValues),
         containerColor = screenBackground,
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             MeasurementsTopBar(
                 isSearchVisible = isSearchVisible,
@@ -273,7 +275,8 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
                 },
                 exportMenuVisible = exportMenuVisible,
                 bleConnected = uiState.bleConnected,
-                bleDeviceName = uiState.bleDeviceName
+                bleDeviceName = uiState.bleDeviceName,
+                windowInsets = WindowInsets(0.dp)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -357,12 +360,14 @@ private fun MeasurementsTopBar(
     onExportFormat: (MeasurementsExport.Format) -> Unit,
     exportMenuVisible: Boolean,
     bleConnected: Boolean,
-    bleDeviceName: String?
+    bleDeviceName: String?,
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets
 ) {
     Column {
         LargeTopAppBar(
             title = { Text(text = stringResource(id = R.string.measurements_title)) },
             colors = TopAppBarDefaults.largeTopAppBarColors(),
+            windowInsets = windowInsets,
             actions = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
