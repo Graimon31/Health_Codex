@@ -7,8 +7,8 @@ import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
-import com.example.healthcodex.data.profile.UserProfile
 import com.example.healthcodex.data.db.InstantJsonAdapter
+import com.example.healthcodex.data.profile.UserProfile
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.time.LocalDate
@@ -22,8 +22,9 @@ import com.squareup.moshi.ToJson
  */
 object ProfileExportImport {
     private val moshi: Moshi = Moshi.Builder()
-        .add(LocalDateJsonAdapter)
-        .add(InstantJsonAdapter())
+        // Explicitly register adapters for java.time types to avoid runtime crashes on import.
+        .add(LocalDate::class.java, LocalDateJsonAdapter)
+        .add(java.time.Instant::class.java, InstantJsonAdapter())
         .add(KotlinJsonAdapterFactory())
         .build()
     private val adapter = moshi.adapter(UserProfile::class.java)
