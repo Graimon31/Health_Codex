@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.roundToInt
@@ -60,8 +61,16 @@ fun ForecastRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Прогноз") }) },
-        modifier = Modifier.fillMaxSize()
+        topBar = {
+            TopAppBar(
+                title = { Text("Прогноз") },
+                windowInsets = WindowInsets(0)
+            )
+        },
+        modifier = Modifier.fillMaxSize(),
+        // The outer scaffold already applies safe drawing insets; disable them here to prevent
+        // duplicated top/bottom padding that caused large white bars.
+        contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
         if (state.isLoading) {
             LoadingState(
