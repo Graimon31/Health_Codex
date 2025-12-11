@@ -4,6 +4,7 @@ package com.example.healthcodex
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.view.WindowCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -41,6 +42,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable edge-to-edge to avoid doubled insets and white bars around the content.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             HealthCodexTheme {
                 AppScaffold()
