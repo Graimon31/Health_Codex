@@ -23,8 +23,8 @@ import com.squareup.moshi.ToJson
 object ProfileExportImport {
     private val moshi: Moshi = Moshi.Builder()
         // Explicitly register adapters for java.time types to avoid runtime crashes on import.
-        .add(LocalDate::class.java, LocalDateJsonAdapter)
-        .add(java.time.Instant::class.java, InstantJsonAdapter())
+        .add(LocalDateJsonAdapter)
+        .add(InstantJsonAdapter())
         .add(KotlinJsonAdapterFactory())
         .build()
     private val adapter = moshi.adapter(UserProfile::class.java)
