@@ -8,17 +8,22 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
 import com.example.healthcodex.data.profile.UserProfile
+import com.example.healthcodex.data.db.InstantJsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.time.LocalDate
 import android.net.Uri
 import java.io.InputStream
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.ToJson
 
 /**
  * Helper object for JSON export/import and ICE sharing.
  */
 object ProfileExportImport {
     private val moshi: Moshi = Moshi.Builder()
+        .add(LocalDateJsonAdapter)
+        .add(InstantJsonAdapter())
         .add(KotlinJsonAdapterFactory())
         .build()
     private val adapter = moshi.adapter(UserProfile::class.java)
@@ -90,4 +95,13 @@ object ProfileExportImport {
         }
         context.startActivity(Intent.createChooser(intent, "Поделиться ICE"))
     }
+}
+
+/** Moshi adapter for java.time.LocalDate to ensure JSON import/export succeeds. */
+private object LocalDateJsonAdapter {
+    @ToJson
+    fun toJson(value: LocalDate?): String? = value?.toString()
+
+    @FromJson
+    fun fromJson(value: String?): LocalDate? = value?.let(LocalDate::parse)
 }
