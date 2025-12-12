@@ -51,7 +51,7 @@ import com.example.healthcodex.data.profile.Units
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues) {
+fun ProfileEditRoute(navController: NavController) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(application))
@@ -71,7 +71,6 @@ fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues)
         topBar = {
             TopAppBar(title = { Text("Редактирование профиля") })
         },
-        modifier = Modifier.padding(paddingValues)
     ) { innerPadding ->
         Column(
             modifier = Modifier

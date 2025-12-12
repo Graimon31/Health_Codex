@@ -98,7 +98,7 @@ private fun AppScaffold() {
         ) {
             composablePlaceholder("home")
             composablePlaceholder("measurements")
-            ProfileNavGraph(navController, innerPadding)
+            ProfileNavGraph(navController)
         }
     }
 }

@@ -29,7 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
 @Composable
-fun ProfileSecurityRoute(navController: NavController, paddingValues: PaddingValues) {
+fun ProfileSecurityRoute(navController: NavController) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(application))
@@ -46,7 +46,6 @@ fun ProfileSecurityRoute(navController: NavController, paddingValues: PaddingVal
                 }
             )
         },
-        modifier = Modifier.padding(paddingValues)
     ) { innerPadding ->
         Column(
             modifier = Modifier

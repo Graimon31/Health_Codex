@@ -50,7 +50,7 @@ import com.example.healthcodex.feature.profile.ProfileExportImport
 import com.example.healthcodex.util.Formatters
 
 @Composable
-fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues) {
+fun ProfileViewRoute(navController: NavController) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(application))
@@ -77,7 +77,6 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {

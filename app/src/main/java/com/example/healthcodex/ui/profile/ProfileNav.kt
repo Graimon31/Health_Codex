@@ -16,16 +16,16 @@ object ProfileNav {
     const val security = "profile/security"
 }
 
-fun NavGraphBuilder.ProfileNavGraph(navController: NavController, paddingValues: PaddingValues) {
+fun NavGraphBuilder.ProfileNavGraph(navController: NavController) {
     navigation(startDestination = ProfileNav.view, route = "profile") {
         composable(ProfileNav.view) {
-            ProfileViewRoute(navController = navController, paddingValues = paddingValues)
+            ProfileViewRoute(navController = navController)
         }
         composable(ProfileNav.edit) {
-            ProfileEditRoute(navController = navController, paddingValues = paddingValues)
+            ProfileEditRoute(navController = navController)
         }
         composable(ProfileNav.security) {
-            ProfileSecurityRoute(navController = navController, paddingValues = paddingValues)
+            ProfileSecurityRoute(navController = navController)
         }
     }
 }
