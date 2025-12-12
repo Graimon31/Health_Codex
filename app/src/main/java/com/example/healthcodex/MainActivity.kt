@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
+import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -15,11 +17,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -34,6 +40,7 @@ import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNav
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
+import androidx.core.view.WindowInsetsControllerCompat
 
 /**
  * Main activity that hosts the application navigation graph.
@@ -58,6 +65,21 @@ private fun AppScaffold() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val view = LocalView.current
+    val isDark = isSystemInDarkTheme()
+
+    // Align system bar colors with the current theme so there are no bright white bands
+    // above or below the app content when edge-to-edge is enabled.
+    SideEffect {
+        val window = (view.context as Activity).window
+        val background = MaterialTheme.colorScheme.background.toArgb()
+        window.statusBarColor = background
+        window.navigationBarColor = background
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.isAppearanceLightStatusBars = !isDark
+        controller.isAppearanceLightNavigationBars = !isDark
+    }
+
     val measurementHome = MeasurementsNav.home
     val profileStart = ProfileNav.view
     val items = listOf(
