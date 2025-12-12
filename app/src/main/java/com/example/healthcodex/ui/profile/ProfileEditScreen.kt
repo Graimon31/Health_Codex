@@ -70,8 +70,7 @@ fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues)
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Редактирование профиля") })
-        },
-        modifier = Modifier.padding(paddingValues)
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier

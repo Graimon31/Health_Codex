@@ -77,7 +77,6 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {

@@ -45,8 +45,7 @@ fun ProfileSecurityRoute(navController: NavController, paddingValues: PaddingVal
                     }
                 }
             )
-        },
-        modifier = Modifier.padding(paddingValues)
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
