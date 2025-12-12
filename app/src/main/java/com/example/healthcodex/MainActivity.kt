@@ -79,6 +79,10 @@ private fun AppScaffold() {
     )
 
     Scaffold(
+        // Turn off automatic system bar padding to avoid double-applied insets that produced
+        // large white bands around the content. Individual screens handle their own safe areas
+        // where necessary.
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         bottomBar = {
             NavigationBar {
                 items.forEach { item ->
