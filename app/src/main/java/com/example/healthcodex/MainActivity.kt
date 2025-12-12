@@ -21,9 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -72,9 +73,10 @@ private fun AppScaffold() {
     // above or below the app content when edge-to-edge is enabled.
     SideEffect {
         val window = (view.context as Activity).window
-        val background = MaterialTheme.colorScheme.background.toArgb()
-        window.statusBarColor = background
-        window.navigationBarColor = background
+        // Draw edge-to-edge with transparent bars so the app surface fills the screen without
+        // extra white margins. Icon contrast follows the current theme.
+        window.statusBarColor = Color.Transparent.toArgb()
+        window.navigationBarColor = Color.Transparent.toArgb()
         val controller = WindowInsetsControllerCompat(window, window.decorView)
         controller.isAppearanceLightStatusBars = !isDark
         controller.isAppearanceLightNavigationBars = !isDark
