@@ -7,8 +7,10 @@ import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -103,10 +105,9 @@ private fun AppScaffold() {
     )
 
     Scaffold(
-        // Turn off automatic system bar padding to avoid double-applied insets that produced
-        // large white bands around the content. Individual screens handle their own safe areas
-        // where necessary.
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
+        // Apply a single layer of safe insets here so child screens do not need to manage
+        // status/navigation bar padding and we avoid duplicated white bands.
+        contentWindowInsets = WindowInsets.safeDrawing,
         bottomBar = {
             NavigationBar {
                 items.forEach { item ->

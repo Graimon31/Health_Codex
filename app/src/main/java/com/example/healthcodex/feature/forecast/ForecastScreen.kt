@@ -24,8 +24,8 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.roundToInt
@@ -63,14 +62,11 @@ fun ForecastRoute(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Прогноз") },
-                windowInsets = WindowInsets(0)
+                title = { Text("Прогноз") }
             )
         },
         modifier = Modifier.fillMaxSize(),
-        // The outer scaffold already applies safe drawing insets; disable them here to prevent
-        // duplicated top/bottom padding that caused large white bars.
-        contentWindowInsets = WindowInsets(0)
+        // Rely on the outer scaffold's safe insets for consistent status/navigation spacing.
     ) { innerPadding ->
         if (state.isLoading) {
             LoadingState(
