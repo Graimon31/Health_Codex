@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base application theme using Material3 DayNight without an action bar. -->
-    <style name="Theme.HealthCodex" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Base application theme using Material3 DayNight. -->
+    <style name="Theme.HealthCodex" parent="Theme.Material3.DayNight">
         <!-- Custom status bar styling to blend with Compose Material3 content. -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentStatus">true</item>
