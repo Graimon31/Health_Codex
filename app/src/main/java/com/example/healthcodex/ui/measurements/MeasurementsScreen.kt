@@ -10,7 +10,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -191,18 +190,14 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         refreshing = uiState.isRefreshing,
         onRefresh = { viewModel.refresh() }
     )
-    val screenBackground = if (isSystemInDarkTheme()) {
-        MaterialTheme.colorScheme.background
-    } else {
-        Color(0xFFF9FAFB)
-    }
+    val screenBackground = Color.Transparent
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(screenBackground)
             .padding(paddingValues),
-        containerColor = screenBackground,
+        containerColor = Color.Transparent,
         topBar = {
             MeasurementsTopBar(
                 isSearchVisible = isSearchVisible,

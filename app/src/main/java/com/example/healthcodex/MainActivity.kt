@@ -4,8 +4,10 @@ package com.example.healthcodex
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -15,11 +17,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +38,7 @@ import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNav
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
+import com.example.healthcodex.ui.theme.LiquidGlassBackdrop
 
 /**
  * Main activity that hosts the application navigation graph.
@@ -76,50 +82,61 @@ private fun AppScaffold() {
     )
 
     Scaffold(
+        containerColor = Color.Transparent,
         bottomBar = {
-            NavigationBar {
-                items.forEach { item ->
-                    val isSelected = when (item.route) {
-                        "forecast" -> currentRoute == item.route
-                        measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
-                        profileStart -> currentRoute?.startsWith("profile") == true
-                        else -> currentRoute == item.route
-                    }
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                navController.navigate(item.route) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+            Surface(
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+            ) {
+                NavigationBar(containerColor = Color.Transparent) {
+                    items.forEach { item ->
+                        val isSelected = when (item.route) {
+                            "forecast" -> currentRoute == item.route
+                            measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
+                            profileStart -> currentRoute?.startsWith("profile") == true
+                            else -> currentRoute == item.route
+                        }
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = {
+                                if (!isSelected) {
+                                    navController.navigate(item.route) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        icon = { Icon(item.icon, contentDescription = stringResource(id = item.labelRes)) },
-                        label = { Text(stringResource(id = item.labelRes)) }
-                    )
+                            },
+                            icon = { Icon(item.icon, contentDescription = stringResource(id = item.labelRes)) },
+                            label = { Text(stringResource(id = item.labelRes)) }
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "forecast",
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            composable("forecast") {
-                ForecastRoute(
-                    paddingValues = innerPadding,
-                    onFillProfile = { navController.navigate(ProfileNav.edit) }
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LiquidGlassBackdrop()
+            NavHost(
+                navController = navController,
+                startDestination = "forecast",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                composable("forecast") {
+                    ForecastRoute(
+                        paddingValues = innerPadding,
+                        onFillProfile = { navController.navigate(ProfileNav.edit) }
+                    )
+                }
+                measurementsNavGraph(navController, innerPadding)
+                ProfileNavGraph(navController, innerPadding)
             }
-            measurementsNavGraph(navController, innerPadding)
-            ProfileNavGraph(navController, innerPadding)
         }
     }
 }

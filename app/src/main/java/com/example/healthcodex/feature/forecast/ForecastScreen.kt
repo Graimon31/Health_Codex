@@ -20,8 +20,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +29,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.example.healthcodex.ui.theme.GlassCritical
+import com.example.healthcodex.ui.theme.GlassPositive
+import com.example.healthcodex.ui.theme.GlassWarning
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,6 +59,7 @@ fun ForecastRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = { TopAppBar(title = { Text("Прогноз") }) },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
@@ -103,7 +106,7 @@ private fun ForecastContent(
         item { ForecastSummaryCard(forecast) }
         if (forecast.profileMissing) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                LiquidGlassSurface {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Нет данных для прогноза",
@@ -135,7 +138,7 @@ private fun ForecastContent(
             if (forecast.recommendations.isNotEmpty()) {
                 item { SectionHeader("Рекомендации на ближайшее время") }
                 item {
-                    Card {
+                    LiquidGlassSurface {
                         Column(modifier = Modifier.padding(16.dp)) {
                             forecast.recommendations.forEachIndexed { index, recommendation ->
                                 Text(text = "• $recommendation", style = MaterialTheme.typography.bodyMedium)
@@ -153,7 +156,7 @@ private fun ForecastContent(
 
 @Composable
 private fun ForecastSummaryCard(forecast: HealthForecast) {
-    Card {
+    LiquidGlassSurface {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = forecast.headline,
@@ -193,11 +196,11 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun InsightCard(insight: WellnessInsight) {
     val (icon, tint) = when (insight.severity) {
-        InsightSeverity.POSITIVE -> Icons.Filled.CheckCircle to Color(0xFF2E7D32)
-        InsightSeverity.WARNING -> Icons.Filled.Warning to Color(0xFFF57F17)
-        InsightSeverity.CRITICAL -> Icons.Filled.Warning to Color(0xFFC62828)
+        InsightSeverity.POSITIVE -> Icons.Filled.CheckCircle to GlassPositive
+        InsightSeverity.WARNING -> Icons.Filled.Warning to GlassWarning
+        InsightSeverity.CRITICAL -> Icons.Filled.Warning to GlassCritical
     }
-    Card {
+    LiquidGlassSurface {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, tint = tint)
