@@ -129,6 +129,7 @@ import com.example.healthcodex.data.measurements.MeasurementSourceFilter
 import com.example.healthcodex.data.measurements.MeasurementType
 import com.example.healthcodex.feature.measurements.MeasurementsExport
 import com.example.healthcodex.ui.theme.HealthCodexTheme
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import com.example.healthcodex.util.Formatters
 import java.time.LocalDate
 import java.time.LocalTime
@@ -483,11 +484,11 @@ private fun MeasurementsErrorCard(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ElevatedCard(
+    LiquidGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.82f),
         shape = InteractiveShape
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -791,10 +792,9 @@ private fun SummarySection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    ElevatedCard(
+    LiquidGlassSurface(
         modifier = Modifier.widthIn(min = 160.dp, max = 240.dp),
-        shape = InteractiveShape,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        shape = InteractiveShape
     ) {
         Row(
             modifier = Modifier
@@ -842,17 +842,16 @@ private fun MeasurementCard(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    Card(
-        onClick = onClick,
+    LiquidGlassSurface(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
+            .clip(InteractiveShape)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { menuExpanded = true }
             ),
-        shape = InteractiveShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        shape = InteractiveShape
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

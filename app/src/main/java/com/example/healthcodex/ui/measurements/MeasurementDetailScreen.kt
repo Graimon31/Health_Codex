@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthcodex.R
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementType
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import com.example.healthcodex.util.Formatters
 import kotlin.math.max
 import kotlin.math.min
@@ -146,11 +147,11 @@ private fun MeasurementDetailContent(
 
 @Composable
 private fun DetailHeroCard(entry: MeasurementEntry) {
-    Card(
+    LiquidGlassSurface(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = CardDefaults.shape
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = stringResource(id = entry.type.titleRes), style = MaterialTheme.typography.titleLarge)
@@ -170,11 +171,10 @@ private fun DetailHeroCard(entry: MeasurementEntry) {
 
 @Composable
 private fun MeasurementChartSection(entry: MeasurementEntry, history: List<MeasurementEntry>) {
-    Surface(
+    LiquidGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        tonalElevation = 2.dp,
         shape = CardDefaults.shape
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

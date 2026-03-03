@@ -7,11 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -33,17 +34,23 @@ fun LiquidGlassBackdrop(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun LiquidGlassSurface(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun LiquidGlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    color: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+    contentColor: Color = contentColorFor(color),
+    content: @Composable () -> Unit
+) {
     Surface(
         modifier = modifier
-            .blur(0.2.dp)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
-                shape = RoundedCornerShape(24.dp)
+                shape = shape
             ),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+        shape = shape,
+        color = color,
+        contentColor = contentColor,
         tonalElevation = 2.dp,
         shadowElevation = 0.dp,
         content = content
