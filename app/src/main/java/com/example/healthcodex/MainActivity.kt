@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -17,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,6 +37,7 @@ import com.example.healthcodex.ui.profile.ProfileNav
 import com.example.healthcodex.ui.profile.ProfileNavGraph
 import com.example.healthcodex.ui.theme.HealthCodexTheme
 import com.example.healthcodex.ui.theme.LiquidGlassBackdrop
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 
 /**
  * Main activity that hosts the application navigation graph.
@@ -84,11 +83,9 @@ private fun AppScaffold() {
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
-            Surface(
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                color = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+            LiquidGlassSurface(
+                modifier = Modifier
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 NavigationBar(containerColor = Color.Transparent) {
                     items.forEach { item ->

@@ -129,6 +129,7 @@ import com.example.healthcodex.data.measurements.MeasurementSourceFilter
 import com.example.healthcodex.data.measurements.MeasurementType
 import com.example.healthcodex.feature.measurements.MeasurementsExport
 import com.example.healthcodex.ui.theme.HealthCodexTheme
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import com.example.healthcodex.util.Formatters
 import java.time.LocalDate
 import java.time.LocalTime
@@ -313,7 +314,7 @@ private fun MeasurementsTopBar(
     Column {
         LargeTopAppBar(
             title = { Text(text = stringResource(id = R.string.measurements_title)) },
-            colors = TopAppBarDefaults.largeTopAppBarColors(),
+            colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent),
             actions = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -412,23 +413,29 @@ private fun MeasurementsList(
     ) {
         stickyHeader {
             Surface(color = backgroundColor) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                PeriodSelector(
-                    selected = uiState.filter.period,
-                    onPeriodSelected = onPeriodSelected
-                )
-                TypeSelector(
-                    selectedTypes = uiState.filter.selectedTypes,
-                    onTypeToggle = onTypeToggle
-                )
+                LiquidGlassSurface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 24.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        PeriodSelector(
+                            selected = uiState.filter.period,
+                            onPeriodSelected = onPeriodSelected
+                        )
+                        TypeSelector(
+                            selectedTypes = uiState.filter.selectedTypes,
+                            onTypeToggle = onTypeToggle
+                        )
+                    }
+                }
             }
-        }
         }
         uiState.errorMessage?.let { message ->
             item {

@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.data.profile.Sex
 import com.example.healthcodex.data.profile.Units
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +72,10 @@ fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues)
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Редактирование профиля") })
+            TopAppBar(
+                title = { Text("Редактирование профиля") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
         },
         modifier = Modifier.padding(paddingValues),
         containerColor = Color.Transparent
@@ -81,22 +86,52 @@ fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            PersonalSection(editState.form, editState.errors, viewModel::updateField)
-            Spacer(modifier = Modifier.height(16.dp))
-            MedicalSection(editState.form, viewModel::addCondition, viewModel::removeCondition, viewModel::addAllergy, viewModel::removeAllergy, viewModel::addMedication, viewModel::updateMedication, viewModel::removeMedication)
-            Spacer(modifier = Modifier.height(16.dp))
-            BaselineSection(editState.form, editState.errors, viewModel::updateField)
-            Spacer(modifier = Modifier.height(16.dp))
-            ContactsSection(editState.form, editState.errors, viewModel::updateField)
-            Spacer(modifier = Modifier.height(16.dp))
-            PrivacySection(editState.form, editState.errors, viewModel::updateField)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { viewModel.saveProfile() }, modifier = Modifier.weight(1f)) {
-                    Text("Сохранить")
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    PersonalSection(editState.form, editState.errors, viewModel::updateField)
                 }
-                OutlinedButton(onClick = { viewModel.cancelEditing(); navController.popBackStack() }, modifier = Modifier.weight(1f)) {
-                    Text("Отмена")
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    MedicalSection(editState.form, viewModel::addCondition, viewModel::removeCondition, viewModel::addAllergy, viewModel::removeAllergy, viewModel::addMedication, viewModel::updateMedication, viewModel::removeMedication)
+                }
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    BaselineSection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    ContactsSection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    PrivacySection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Button(onClick = { viewModel.saveProfile() }, modifier = Modifier.weight(1f)) {
+                        Text("Сохранить")
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.cancelEditing(); navController.popBackStack() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Отмена")
+                    }
                 }
             }
             editState.errors["general"]?.let {

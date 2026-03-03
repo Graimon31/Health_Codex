@@ -33,6 +33,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,7 +74,12 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
     val profile = state.profile
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Профиль") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Профиль") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent

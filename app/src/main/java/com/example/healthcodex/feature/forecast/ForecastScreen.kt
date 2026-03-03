@@ -29,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import com.example.healthcodex.ui.theme.GlassCritical
 import com.example.healthcodex.ui.theme.GlassPositive
 import com.example.healthcodex.ui.theme.GlassWarning
@@ -60,7 +61,12 @@ fun ForecastRoute(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = { TopAppBar(title = { Text("Прогноз") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Прогноз") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         if (state.isLoading) {
