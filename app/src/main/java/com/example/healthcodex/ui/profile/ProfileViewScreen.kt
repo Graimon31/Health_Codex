@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -167,7 +168,7 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
 
 @Composable
 private fun EmptyProfileCard(onFill: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "Профиль не заполнен", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -182,7 +183,7 @@ private fun EmptyProfileCard(onFill: () -> Unit) {
 
 @Composable
 private fun BiometricLockCard(onUnlock: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -204,7 +205,7 @@ private fun BiometricLockCard(onUnlock: () -> Unit) {
 @Composable
 private fun ProfileSummaryCard(state: ProfileViewState) {
     val profile = state.profile ?: return
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = profile.fullName.ifBlank { "Без имени" }, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -222,7 +223,7 @@ private fun ProfileSummaryCard(state: ProfileViewState) {
 
 @Composable
 private fun MedicalCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Медицинский статус", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -243,7 +244,7 @@ private fun MedicalCard(profile: com.example.healthcodex.data.profile.UserProfil
 
 @Composable
 private fun BaselineCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Нормы и пороги", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -259,7 +260,7 @@ private fun BaselineCard(profile: com.example.healthcodex.data.profile.UserProfi
 
 @Composable
 private fun ContactsCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Контакты", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -271,7 +272,7 @@ private fun ContactsCard(profile: com.example.healthcodex.data.profile.UserProfi
 
 @Composable
 private fun DeviceCard(profile: com.example.healthcodex.data.profile.UserProfile, onChange: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("BLE устройство", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -289,7 +290,7 @@ private fun DeviceCard(profile: com.example.healthcodex.data.profile.UserProfile
 
 @Composable
 private fun PrivacyCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Конфиденциальность", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))

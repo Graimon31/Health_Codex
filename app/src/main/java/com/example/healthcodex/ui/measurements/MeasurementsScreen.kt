@@ -490,12 +490,12 @@ private fun MeasurementsErrorCard(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        shape = InteractiveShape
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(InteractiveShape),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -798,10 +798,11 @@ private fun SummarySection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    ElevatedCard(
-        modifier = Modifier.widthIn(min = 160.dp, max = 240.dp),
-        shape = InteractiveShape,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+    Card(
+        modifier = Modifier
+            .widthIn(min = 160.dp, max = 240.dp)
+            .clip(InteractiveShape),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -850,15 +851,14 @@ private fun MeasurementCard(
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     Card(
-        onClick = onClick,
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
+            .clip(InteractiveShape)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { menuExpanded = true }
             ),
-        shape = InteractiveShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
