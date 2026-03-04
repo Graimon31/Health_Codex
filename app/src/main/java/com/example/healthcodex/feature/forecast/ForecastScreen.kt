@@ -103,26 +103,8 @@ private fun ForecastContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { ForecastSummaryCard(forecast) }
-        if (forecast.profileMissing) {
-            item {
-                LiquidGlassSurface {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Нет данных для прогноза",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Добавьте рост, вес и диагнозы, чтобы система могла рассчитать прогноз.")
-                        Spacer(modifier = Modifier.height(12.dp))
-                        TextButton(onClick = onFillProfile) {
-                            Text("Перейти к заполнению профиля")
-                        }
-                    }
-                }
-            }
-        } else {
+        item { ForecastSummaryCard(forecast, onFillProfile) }
+        if (!forecast.profileMissing) {
             if (forecast.positiveInsights.isNotEmpty()) {
                 item { SectionHeader("Что сейчас хорошо") }
                 items(forecast.positiveInsights) { insight ->
@@ -155,7 +137,7 @@ private fun ForecastContent(
 }
 
 @Composable
-private fun ForecastSummaryCard(forecast: HealthForecast) {
+private fun ForecastSummaryCard(forecast: HealthForecast, onFillProfile: () -> Unit) {
     LiquidGlassSurface {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -165,10 +147,14 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
-            if (!forecast.profileMissing) {
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            if (forecast.profileMissing) {
+                TextButton(onClick = onFillProfile) {
+                    Text("Заполнить профиль")
+                }
+            } else {
                 AssistChip(
                     onClick = {},
                     label = { Text("Обновлено на основе профиля") },

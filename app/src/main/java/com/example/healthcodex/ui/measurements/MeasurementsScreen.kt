@@ -409,16 +409,15 @@ private fun MeasurementsList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(bottom = 120.dp)
+        contentPadding = PaddingValues(bottom = 180.dp)
     ) {
-        stickyHeader {
-            Surface(color = backgroundColor) {
+        item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 PeriodSelector(
                     selected = uiState.filter.period,
@@ -429,7 +428,6 @@ private fun MeasurementsList(
                     onTypeToggle = onTypeToggle
                 )
             }
-        }
         }
         uiState.errorMessage?.let { message ->
             item {
@@ -629,15 +627,15 @@ private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (Measu
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (MeasurementType) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_filters_type))
-        FlowRow(
+        Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState())
         ) {
             MeasurementType.values().forEach { type ->
                 val selected = selectedTypes.contains(type)
@@ -681,9 +679,9 @@ private fun MeasurementTypeChip(
         }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (selected) {
                 Icon(imageVector = Icons.Default.Check, contentDescription = null)
@@ -698,22 +696,18 @@ private fun MeasurementTypeChip(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SummarySection(
     summary: com.example.healthcodex.data.measurements.MeasurementSummary,
     modifier: Modifier = Modifier
 ) {
     val noData = stringResource(id = R.string.measure_summary_no_data)
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(text = stringResource(id = R.string.measure_summary_title))
-        FlowRow(
-            modifier = Modifier.padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            maxItemsInEachRow = 2
-        ) {
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_hr),
                 value = summary.averageHr?.let { value ->
                     stringResource(id = R.string.measure_summary_unit_bpm, value.roundToInt())
@@ -722,6 +716,7 @@ private fun SummarySection(
                 icon = Icons.Default.Favorite
             )
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_steps),
                 value = summary.steps?.let { count ->
                     stringResource(
@@ -732,7 +727,11 @@ private fun SummarySection(
                 color = Color(0xFF10B981),
                 icon = Icons.AutoMirrored.Filled.DirectionsWalk
             )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_calories),
                 value = summary.calories?.let { total ->
                     stringResource(
@@ -744,6 +743,7 @@ private fun SummarySection(
                 icon = Icons.Default.LocalFireDepartment
             )
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_pressure),
                 value = summary.pressure?.let { pair ->
                     stringResource(
@@ -755,7 +755,11 @@ private fun SummarySection(
                 color = Color(0xFF6366F1),
                 icon = Icons.Default.Bloodtype
             )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_weight_delta),
                 value = summary.weightDelta?.let { delta ->
                     stringResource(id = R.string.measure_summary_unit_weight_delta, delta)
@@ -764,6 +768,7 @@ private fun SummarySection(
                 icon = Icons.Default.MonitorWeight
             )
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_spo2),
                 value = summary.averageSpo2?.let { spo ->
                     stringResource(id = R.string.measure_summary_unit_spo2, spo.roundToInt())
@@ -771,13 +776,18 @@ private fun SummarySection(
                 color = Color(0xFF14B8A6),
                 icon = Icons.Default.FavoriteBorder
             )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_sleep),
                 value = summary.sleepMinutes?.let { Formatters.formatDurationMinutes(it) } ?: noData,
                 color = Color(0xFF6366F1),
                 icon = Icons.Default.Bedtime
             )
             SummaryTile(
+                modifier = Modifier.weight(1f),
                 title = stringResource(id = R.string.measure_summary_respiratory),
                 value = summary.respiratoryRate?.let { rate ->
                     stringResource(id = R.string.measure_summary_unit_respiratory, rate.roundToInt())
@@ -789,11 +799,10 @@ private fun SummarySection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SummaryTile(title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun SummaryTile(modifier: Modifier = Modifier, title: String, value: String, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     LiquidGlassSurface(
-        modifier = Modifier.widthIn(min = 160.dp, max = 240.dp),
+        modifier = modifier,
         shape = InteractiveShape
     ) {
         Row(

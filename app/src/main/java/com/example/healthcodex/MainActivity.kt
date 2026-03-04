@@ -112,7 +112,12 @@ private fun AppScaffold() {
                                 }
                             },
                             icon = { Icon(item.icon, contentDescription = stringResource(id = item.labelRes)) },
-                            label = { Text(stringResource(id = item.labelRes)) }
+                            label = { Text(stringResource(id = item.labelRes)) },
+                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
+                            )
                         )
                     }
                 }

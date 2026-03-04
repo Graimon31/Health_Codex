@@ -86,12 +86,6 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Профиль",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
             if (state.biometricLockEnabled && !state.isAuthenticated) {
                 BiometricLockCard(onUnlock = viewModel::unlockProfile)
             } else if (profile == null) {
@@ -169,7 +163,7 @@ private fun EmptyProfileCard(onFill: () -> Unit) {
             Text(text = "Добавьте данные для персонализированного мониторинга")
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onFill) {
-                Text("Заполнить")
+                Text("Заполнить профиль")
             }
         }
     }
