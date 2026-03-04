@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -109,26 +110,26 @@ private fun ForecastContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { ForecastSummaryCard(forecast) }
         if (forecast.profileMissing) {
             item {
                 LiquidGlassSurface {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Нет данных для прогноза",
+                            text = stringResource(id = com.example.healthcodex.R.string.forecast_empty_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Добавьте рост, вес и диагнозы, чтобы система могла рассчитать прогноз.")
+                        Text(text = stringResource(id = com.example.healthcodex.R.string.forecast_empty_description))
                         Spacer(modifier = Modifier.height(12.dp))
                         TextButton(onClick = onFillProfile) {
-                            Text("Перейти к заполнению профиля")
+                            Text(stringResource(id = com.example.healthcodex.R.string.empty_profile_cta))
                         }
                     }
                 }
             }
         } else {
+            item { ForecastSummaryCard(forecast) }
             if (forecast.positiveInsights.isNotEmpty()) {
                 item { SectionHeader("Что сейчас хорошо") }
                 items(forecast.positiveInsights) { insight ->

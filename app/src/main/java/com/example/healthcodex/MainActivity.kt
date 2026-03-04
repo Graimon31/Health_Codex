@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +98,13 @@ private fun AppScaffold() {
                         }
                         NavigationBarItem(
                             selected = isSelected,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                            ),
                             onClick = {
                                 if (!isSelected) {
                                     navController.navigate(item.route) {
@@ -123,7 +131,6 @@ private fun AppScaffold() {
                 startDestination = "forecast",
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
             ) {
                 composable("forecast") {
                     ForecastRoute(

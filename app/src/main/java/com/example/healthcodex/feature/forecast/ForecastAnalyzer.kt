@@ -16,8 +16,8 @@ object ForecastAnalyzer {
     fun analyze(profile: UserProfile?): HealthForecast {
         if (profile == null) {
             return HealthForecast(
-                headline = "Недостаточно данных",
-                detail = "Заполните раздел \"Профиль\", чтобы рассчитать персональный прогноз.",
+                headline = "Недостаточно данных для прогноза",
+                detail = "Добавьте рост, вес и диагнозы, чтобы получить прогноз.",
                 riskInsights = listOf(
                     WellnessInsight(
                         title = "Нет исходных данных",

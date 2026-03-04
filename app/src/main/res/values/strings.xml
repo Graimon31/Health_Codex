@@ -4,7 +4,9 @@
     <string name="forecast_tab">Прогноз</string>
     <string name="measurements_tab">Измерения</string>
     <string name="profile_saved">Профиль сохранён</string>
-    <string name="empty_profile_cta">Заполнить</string>
+    <string name="forecast_empty_title">Недостаточно данных для прогноза</string>
+    <string name="forecast_empty_description">Добавьте рост, вес и диагнозы, чтобы получить прогноз.</string>
+    <string name="empty_profile_cta">Заполнить профиль</string>
     <string name="empty_profile_title">Профиль не заполнен</string>
     <string name="biometric_prompt_title">Подтвердите личность</string>
     <string name="biometric_prompt_subtitle">Требуется аутентификация для просмотра профиля</string>

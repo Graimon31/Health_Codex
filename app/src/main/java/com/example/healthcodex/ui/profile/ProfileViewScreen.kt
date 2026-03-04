@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -92,12 +93,6 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Профиль",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
             if (state.biometricLockEnabled && !state.isAuthenticated) {
                 BiometricLockCard(onUnlock = viewModel::unlockProfile)
             } else if (profile == null) {
@@ -175,7 +170,7 @@ private fun EmptyProfileCard(onFill: () -> Unit) {
             Text(text = "Добавьте данные для персонализированного мониторинга")
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onFill) {
-                Text("Заполнить")
+                Text(stringResource(id = com.example.healthcodex.R.string.empty_profile_cta))
             }
         }
     }

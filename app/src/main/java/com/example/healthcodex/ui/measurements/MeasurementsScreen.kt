@@ -26,6 +26,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.calculateBottomPadding
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -91,6 +95,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
@@ -193,6 +198,8 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
     )
     val screenBackground = Color.Transparent
 
+    val bottomInsetPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -254,6 +261,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
                 uiState = uiState,
                 isSearchVisible = isSearchVisible,
                 backgroundColor = screenBackground,
+                bottomContentPadding = bottomInsetPadding + 104.dp,
                 onPeriodSelected = { viewModel.setPeriod(it) },
                 onTypeToggle = { viewModel.toggleType(it) },
                 onOpenDetail = { entry -> navController.navigate(MeasurementsNav.detail(entry.id)) },
@@ -291,7 +299,7 @@ private fun SupportLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         modifier = modifier,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
@@ -317,7 +325,7 @@ private fun MeasurementsTopBar(
             colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent),
             actions = {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onToggleSearch) {
@@ -396,6 +404,7 @@ private fun MeasurementsList(
     uiState: MeasurementsUiState,
     isSearchVisible: Boolean,
     backgroundColor: Color,
+    bottomContentPadding: Dp,
     onPeriodSelected: (MeasurementPeriod) -> Unit,
     onTypeToggle: (MeasurementType) -> Unit,
     onOpenDetail: (MeasurementEntry) -> Unit,
@@ -409,9 +418,9 @@ private fun MeasurementsList(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(bottom = 120.dp)
+        contentPadding = PaddingValues(bottom = bottomContentPadding)
     ) {
-        stickyHeader {
+        item {
             Surface(color = backgroundColor) {
                 LiquidGlassSurface(
                     modifier = Modifier
@@ -437,6 +446,7 @@ private fun MeasurementsList(
                 }
             }
         }
+        item { Spacer(modifier = Modifier.height(12.dp)) }
         uiState.errorMessage?.let { message ->
             item {
                 MeasurementsErrorCard(
@@ -540,7 +550,7 @@ private fun MeasurementsFab(
     onStartMeasurement: () -> Unit,
     onAddManual: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.End) {
+    Column(modifier = Modifier.navigationBarsPadding(), horizontalAlignment = Alignment.End) {
         if (connected) {
             val label = deviceName?.takeIf { it.isNotBlank() }?.let {
                 stringResource(id = R.string.measure_action_start_measurement_device, it)
@@ -641,8 +651,8 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_filters_type))
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.padding(top = 8.dp)
         ) {
             MeasurementType.values().forEach { type ->
@@ -687,7 +697,7 @@ private fun MeasurementTypeChip(
         }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -696,7 +706,7 @@ private fun MeasurementTypeChip(
             }
             Text(
                 text = stringResource(id = type.titleRes),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -715,8 +725,8 @@ private fun SummarySection(
         SectionTitle(text = stringResource(id = R.string.measure_summary_title))
         FlowRow(
             modifier = Modifier.padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             maxItemsInEachRow = 2
         ) {
             SummaryTile(
@@ -930,7 +940,7 @@ private fun MeasurementCard(
                 if (note.isNotBlank()) {
                     Text(
                         text = note,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -1060,7 +1070,7 @@ private fun MeasurementsEmptyState(isSearch: Boolean) {
         )
         Text(
             text = stringResource(id = R.string.measure_empty_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelLarge,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
