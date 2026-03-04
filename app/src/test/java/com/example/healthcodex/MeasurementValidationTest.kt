@@ -6,10 +6,10 @@ import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementType
 import com.example.healthcodex.util.Validation
 import java.time.Instant
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
+import org.junit.Test
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 
 /**
  * Unit tests covering measurement validation scenarios.
@@ -34,7 +34,7 @@ class MeasurementValidationTest {
             timestamp = Instant.now(),
             details = MeasurementDetails(primaryValue = 20.0)
         )
-        assertFailsWith<IllegalArgumentException> {
+        assertThrows(IllegalArgumentException::class.java) {
             Validation.validateMeasurement(entry)
         }
     }
@@ -46,7 +46,7 @@ class MeasurementValidationTest {
             timestamp = Instant.now(),
             details = MeasurementDetails(primaryValue = 120.0)
         )
-        assertFailsWith<IllegalArgumentException> {
+        assertThrows(IllegalArgumentException::class.java) {
             Validation.validateMeasurement(entry)
         }
     }
@@ -59,7 +59,7 @@ class MeasurementValidationTest {
             details = MeasurementDetails(durationMinutes = -5, endInstant = Instant.now().plusSeconds(3600)),
             startTimestamp = Instant.now()
         )
-        assertFailsWith<IllegalArgumentException> {
+        assertThrows(IllegalArgumentException::class.java) {
             Validation.validateMeasurement(entry)
         }
     }
