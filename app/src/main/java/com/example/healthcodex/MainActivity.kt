@@ -6,22 +6,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -37,11 +30,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcodex.R
 import com.example.healthcodex.feature.forecast.ForecastRoute
-import com.example.healthcodex.ui.ProfileNavItem
 import com.example.healthcodex.ui.measurements.MeasurementsNav
 import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNav
 import com.example.healthcodex.ui.profile.ProfileNavGraph
+import com.example.healthcodex.ui.theme.GlassNavItem
+import com.example.healthcodex.ui.theme.GlassBottomBar
+import com.example.healthcodex.ui.theme.LiquidGlassBackdrop
 import com.example.healthcodex.ui.theme.HealthCodexTheme
 import androidx.core.view.WindowInsetsControllerCompat
 
@@ -52,7 +47,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Enable edge-to-edge to avoid doubled insets and white bars around the content.
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             HealthCodexTheme {
@@ -69,89 +63,83 @@ private fun AppScaffold() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
 
-    // Align system bar colors with the current theme so there are no bright white bands
-    // above or below the app content when edge-to-edge is enabled.
+    // Always use dark icons=false for the cosmic dark background
     SideEffect {
         val window = (view.context as Activity).window
-        // Draw edge-to-edge with transparent bars so the app surface fills the screen without
-        // extra white margins. Icon contrast follows the current theme.
         window.statusBarColor = Color.Transparent.toArgb()
         window.navigationBarColor = Color.Transparent.toArgb()
         val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.isAppearanceLightStatusBars = !isDark
-        controller.isAppearanceLightNavigationBars = !isDark
+        controller.isAppearanceLightStatusBars = false
+        controller.isAppearanceLightNavigationBars = false
     }
 
     val measurementHome = MeasurementsNav.home
     val profileStart = ProfileNav.view
+
     val items = listOf(
-        ProfileNavItem(
+        GlassNavItem(
             route = "forecast",
-            labelRes = R.string.forecast_tab,
-            icon = Icons.Default.Home
+            icon = Icons.Default.Home,
+            label = stringResource(R.string.forecast_tab)
         ),
-        ProfileNavItem(
+        GlassNavItem(
             route = measurementHome,
-            labelRes = R.string.measurements_tab,
-            icon = Icons.Default.Favorite
+            icon = Icons.Default.Favorite,
+            label = stringResource(R.string.measurements_tab)
         ),
-        ProfileNavItem(
+        GlassNavItem(
             route = profileStart,
-            labelRes = R.string.profile_tab,
-            icon = Icons.Default.Person
+            icon = Icons.Default.Person,
+            label = stringResource(R.string.profile_tab)
         )
     )
 
-    Scaffold(
-        // Apply a single layer of safe insets here so child screens do not need to manage
-        // status/navigation bar padding and we avoid duplicated white bands.
-        contentWindowInsets = WindowInsets.safeDrawing,
-        bottomBar = {
-            NavigationBar {
-                items.forEach { item ->
-                    val isSelected = when (item.route) {
-                        "forecast" -> currentRoute == item.route
-                        measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
-                        profileStart -> currentRoute?.startsWith("profile") == true
-                        else -> currentRoute == item.route
-                    }
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                navController.navigate(item.route) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                }
+    // Wrap everything in the cosmic gradient backdrop
+    LiquidGlassBackdrop {
+        Scaffold(
+            contentWindowInsets = WindowInsets(0),
+            containerColor = Color.Transparent,
+            bottomBar = {
+                GlassBottomBar(
+                    items = items,
+                    currentRoute = currentRoute,
+                    onItemSelected = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
                             }
-                        },
-                        icon = { Icon(item.icon, contentDescription = stringResource(id = item.labelRes)) },
-                        label = { Text(stringResource(id = item.labelRes)) }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "forecast",
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            composable("forecast") {
-                ForecastRoute(
-                    paddingValues = innerPadding,
-                    onFillProfile = { navController.navigate(ProfileNav.edit) }
+                        }
+                    },
+                    isSelected = { item ->
+                        when (item.route) {
+                            "forecast" -> currentRoute == item.route
+                            measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
+                            profileStart -> currentRoute?.startsWith("profile") == true
+                            else -> currentRoute == item.route
+                        }
+                    }
                 )
             }
-            measurementsNavGraph(navController, innerPadding)
-            ProfileNavGraph(navController, innerPadding)
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = "forecast",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                composable("forecast") {
+                    ForecastRoute(
+                        paddingValues = innerPadding,
+                        onFillProfile = { navController.navigate(ProfileNav.edit) }
+                    )
+                }
+                measurementsNavGraph(navController, innerPadding)
+                ProfileNavGraph(navController, innerPadding)
+            }
         }
     }
 }

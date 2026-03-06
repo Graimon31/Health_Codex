@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,12 +24,13 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,9 +38,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.data.profile.Sex
 import com.example.healthcodex.data.profile.Units
+import com.example.healthcodex.ui.theme.GlassButton
+import com.example.healthcodex.ui.theme.GlassOutlinedButton
+import com.example.healthcodex.ui.theme.GlassTextPrimary
+import com.example.healthcodex.ui.theme.GlassTextSecondary
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
+
+/** Reusable OutlinedTextField color overrides for glass surfaces. */
+@Composable
+private fun glassTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = GlassTextPrimary,
+    unfocusedTextColor = GlassTextPrimary,
+    focusedLabelColor = GlassTextSecondary,
+    unfocusedLabelColor = GlassTextSecondary,
+    focusedBorderColor = Color(0x99FFFFFF),
+    unfocusedBorderColor = Color(0x44FFFFFF),
+    cursorColor = GlassTextPrimary
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,51 +87,93 @@ fun ProfileEditRoute(navController: NavController, paddingValues: PaddingValues)
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Редактирование профиля") })
+            TopAppBar(
+                title = { Text("Редактировать профиль", color = GlassTextPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
         },
+        containerColor = Color.Transparent,
         modifier = Modifier.padding(paddingValues)
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            PersonalSection(editState.form, editState.errors, viewModel::updateField)
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    PersonalSection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            MedicalSection(editState.form, viewModel::addCondition, viewModel::removeCondition, viewModel::addAllergy, viewModel::removeAllergy, viewModel::addMedication, viewModel::updateMedication, viewModel::removeMedication)
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    MedicalSection(
+                        editState.form,
+                        viewModel::addCondition,
+                        viewModel::removeCondition,
+                        viewModel::addAllergy,
+                        viewModel::removeAllergy,
+                        viewModel::addMedication,
+                        viewModel::updateMedication,
+                        viewModel::removeMedication
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            BaselineSection(editState.form, editState.errors, viewModel::updateField)
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    BaselineSection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            ContactsSection(editState.form, editState.errors, viewModel::updateField)
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    ContactsSection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            PrivacySection(editState.form, editState.errors, viewModel::updateField)
+            LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    PrivacySection(editState.form, editState.errors, viewModel::updateField)
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { viewModel.saveProfile() }, modifier = Modifier.weight(1f)) {
-                    Text("Сохранить")
+                GlassButton(
+                    onClick = { viewModel.saveProfile() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Сохранить", color = Color.White)
                 }
-                OutlinedButton(onClick = { viewModel.cancelEditing(); navController.popBackStack() }, modifier = Modifier.weight(1f)) {
-                    Text("Отмена")
+                GlassOutlinedButton(
+                    onClick = { viewModel.cancelEditing(); navController.popBackStack() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Отмена", color = Color.White)
                 }
             }
             editState.errors["general"]?.let {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = it, color = MaterialTheme.colorScheme.error)
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
 private fun PersonalSection(form: ProfileForm, errors: Map<String, String>, updateField: ((ProfileForm) -> ProfileForm) -> Unit) {
+    val tfColors = glassTextFieldColors()
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Личные данные", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Личные данные", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = form.fullName,
             onValueChange = { value -> updateField { form -> form.copy(fullName = value) } },
             label = { Text("ФИО") },
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -123,6 +183,7 @@ private fun PersonalSection(form: ProfileForm, errors: Map<String, String>, upda
             label = { Text("Дата рождения (дд.мм.гггг)") },
             supportingText = { errors["birthDate"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
             isError = errors.containsKey("birthDate"),
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -138,6 +199,7 @@ private fun PersonalSection(form: ProfileForm, errors: Map<String, String>, upda
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 supportingText = { errors["height"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 isError = errors.containsKey("height"),
+                colors = tfColors,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
@@ -147,6 +209,7 @@ private fun PersonalSection(form: ProfileForm, errors: Map<String, String>, upda
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 supportingText = { errors["weight"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 isError = errors.containsKey("weight"),
+                colors = tfColors,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -164,6 +227,7 @@ private fun SexSelector(selected: Sex, onSelected: (Sex) -> Unit) {
             label = { Text("Пол") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             readOnly = true,
+            colors = glassTextFieldColors(),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
@@ -193,6 +257,7 @@ private fun UnitsSelector(selected: Units, onSelected: (Units) -> Unit) {
             label = { Text("Единицы") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             readOnly = true,
+            colors = glassTextFieldColors(),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
@@ -222,26 +287,29 @@ private fun MedicalSection(
     updateMedication: (Int, (MedicationForm) -> MedicationForm) -> Unit,
     removeMedication: (Int) -> Unit
 ) {
+    val tfColors = glassTextFieldColors()
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Медицинский статус", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Медицинский статус", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
         EditableChips(title = "Диагнозы", items = form.conditions, onAdd = addCondition, onRemove = removeCondition)
         Spacer(modifier = Modifier.height(8.dp))
         EditableChips(title = "Аллергии", items = form.allergies, onAdd = addAllergy, onRemove = removeAllergy)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Медикаменты", style = MaterialTheme.typography.titleSmall)
+        Text("Медикаменты", style = MaterialTheme.typography.titleSmall, color = GlassTextPrimary)
         form.medications.forEachIndexed { index, medication ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = medication.name,
                     onValueChange = { value -> updateMedication(index) { it.copy(name = value) } },
                     label = { Text("Название") },
+                    colors = tfColors,
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = medication.dose,
                     onValueChange = { value -> updateMedication(index) { it.copy(dose = value) } },
                     label = { Text("Дозировка") },
+                    colors = tfColors,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -250,47 +318,52 @@ private fun MedicalSection(
                 value = medication.scheduleNote,
                 onValueChange = { value -> updateMedication(index) { it.copy(scheduleNote = value) } },
                 label = { Text("Примечание") },
+                colors = tfColors,
                 modifier = Modifier.fillMaxWidth()
             )
             TextButton(onClick = { removeMedication(index) }) {
-                Icon(Icons.Default.Delete, contentDescription = null)
+                Icon(Icons.Default.Delete, contentDescription = null, tint = GlassTextSecondary)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Удалить")
+                Text("Удалить", color = GlassTextSecondary)
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
-        OutlinedButton(onClick = addMedication) {
-            Text("Добавить медикамент")
+        GlassButton(onClick = addMedication) {
+            Text("Добавить медикамент", color = Color.White)
         }
     }
 }
 
 @Composable
 private fun EditableChips(title: String, items: List<String>, onAdd: (String) -> Unit, onRemove: (Int) -> Unit) {
+    val tfColors = glassTextFieldColors()
     Column {
-        Text(title, style = MaterialTheme.typography.titleSmall)
+        Text(title, style = MaterialTheme.typography.titleSmall, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(4.dp))
         items.forEachIndexed { index, item ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(item, modifier = Modifier.weight(1f))
-                TextButton(onClick = { onRemove(index) }) { Text("Удалить") }
+                Text(item, modifier = Modifier.weight(1f), color = GlassTextSecondary)
+                TextButton(onClick = { onRemove(index) }) {
+                    Text("Удалить", color = GlassTextSecondary)
+                }
             }
         }
         var newItem by remember { mutableStateOf("") }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = newItem,
                 onValueChange = { newItem = it },
                 label = { Text("Новое значение") },
+                colors = tfColors,
                 modifier = Modifier.weight(1f)
             )
-            Button(onClick = {
+            GlassButton(onClick = {
                 if (newItem.isNotBlank()) {
                     onAdd(newItem)
                     newItem = ""
                 }
             }) {
-                Text("Добавить")
+                Text("Добавить", color = Color.White)
             }
         }
     }
@@ -299,7 +372,7 @@ private fun EditableChips(title: String, items: List<String>, onAdd: (String) ->
 @Composable
 private fun BaselineSection(form: ProfileForm, errors: Map<String, String>, updateField: ((ProfileForm) -> ProfileForm) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Нормы и пороги", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Нормы и пороги", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
         NumericField(label = "Пульс в покое", value = form.restingHr, error = errors["restingHr"], onChange = { value -> updateField { form -> form.copy(restingHr = value) } })
         NumericField(label = "САД базовое", value = form.bpBaselineSystolic, error = errors["bpBaselineSystolic"], onChange = { value -> updateField { form -> form.copy(bpBaselineSystolic = value) } })
@@ -319,6 +392,7 @@ private fun NumericField(label: String, value: String, error: String?, onChange:
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         supportingText = { error?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
         isError = error != null,
+        colors = glassTextFieldColors(),
         modifier = Modifier.fillMaxWidth()
     )
     Spacer(modifier = Modifier.height(8.dp))
@@ -326,13 +400,15 @@ private fun NumericField(label: String, value: String, error: String?, onChange:
 
 @Composable
 private fun ContactsSection(form: ProfileForm, errors: Map<String, String>, updateField: ((ProfileForm) -> ProfileForm) -> Unit) {
+    val tfColors = glassTextFieldColors()
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Контакты", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Контакты", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = form.emergencyName,
             onValueChange = { value -> updateField { form -> form.copy(emergencyName = value) } },
             label = { Text("ICE имя") },
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -342,17 +418,19 @@ private fun ContactsSection(form: ProfileForm, errors: Map<String, String>, upda
             label = { Text("ICE телефон") },
             supportingText = { errors["emergencyPhone"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
             isError = errors.containsKey("emergencyPhone"),
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedButton(onClick = { /* заглушка */ }) {
-            Text("Импорт из контактов")
+        GlassOutlinedButton(onClick = { /* stub */ }) {
+            Text("Импорт из контактов", color = Color.White)
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = form.doctorName,
             onValueChange = { value -> updateField { form -> form.copy(doctorName = value) } },
             label = { Text("Имя врача") },
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -362,6 +440,7 @@ private fun ContactsSection(form: ProfileForm, errors: Map<String, String>, upda
             label = { Text("Телефон врача") },
             supportingText = { errors["doctorPhone"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
             isError = errors.containsKey("doctorPhone"),
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -369,18 +448,19 @@ private fun ContactsSection(form: ProfileForm, errors: Map<String, String>, upda
 
 @Composable
 private fun PrivacySection(form: ProfileForm, errors: Map<String, String>, updateField: ((ProfileForm) -> ProfileForm) -> Unit) {
+    val tfColors = glassTextFieldColors()
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Конфиденциальность", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Конфиденциальность", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = GlassTextPrimary)
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = form.shareWithDoctor, onCheckedChange = { checked -> updateField { form -> form.copy(shareWithDoctor = checked) } })
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Поделиться данными с врачом")
+            Text("Поделиться данными с врачом", color = GlassTextPrimary)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = form.consentAccepted, onCheckedChange = { checked -> updateField { form -> form.copy(consentAccepted = checked) } })
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Согласие принято")
+            Text("Согласие принято", color = GlassTextPrimary)
         }
         OutlinedTextField(
             value = form.consentVersion,
@@ -388,6 +468,7 @@ private fun PrivacySection(form: ProfileForm, errors: Map<String, String>, updat
             label = { Text("Версия согласия") },
             supportingText = { errors["consentVersion"]?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
             isError = errors.containsKey("consentVersion"),
+            colors = tfColors,
             modifier = Modifier.fillMaxWidth()
         )
     }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -49,14 +48,12 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,7 +73,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -139,6 +135,10 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.healthcodex.R
+import com.example.healthcodex.ui.theme.GlassButton
+import com.example.healthcodex.ui.theme.GlassTextPrimary
+import com.example.healthcodex.ui.theme.GlassTextSecondary
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import com.example.healthcodex.data.measurements.ConnectedDevice
 import com.example.healthcodex.data.measurements.DeviceTypeFilter
 import com.example.healthcodex.data.measurements.MeasurementConfidence
@@ -150,7 +150,6 @@ import com.example.healthcodex.data.measurements.MeasurementSource
 import com.example.healthcodex.data.measurements.MeasurementSourceFilter
 import com.example.healthcodex.data.measurements.MeasurementType
 import com.example.healthcodex.feature.measurements.MeasurementsExport
-import com.example.healthcodex.ui.theme.HealthCodexTheme
 import com.example.healthcodex.util.Formatters
 import java.time.LocalDate
 import java.time.LocalTime
@@ -238,18 +237,11 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         refreshing = uiState.isRefreshing,
         onRefresh = { viewModel.refresh() }
     )
-    val screenBackground = if (isSystemInDarkTheme()) {
-        MaterialTheme.colorScheme.background
-    } else {
-        Color(0xFFF9FAFB)
-    }
-
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(screenBackground)
             .padding(paddingValues),
-        containerColor = screenBackground,
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             MeasurementsTopBar(
@@ -332,6 +324,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold
         ),
+        color = GlassTextPrimary,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
     )
@@ -365,8 +358,8 @@ private fun MeasurementsTopBar(
 ) {
     Column {
         LargeTopAppBar(
-            title = { Text(text = stringResource(id = R.string.measurements_title)) },
-            colors = TopAppBarDefaults.largeTopAppBarColors(),
+            title = { Text(text = stringResource(id = R.string.measurements_title), color = GlassTextPrimary) },
+            colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = Color.Transparent, scrolledContainerColor = Color.Transparent),
             windowInsets = windowInsets,
             actions = {
                 Row(
@@ -500,9 +493,10 @@ private fun MeasurementsList(
                         Text(
                             text = Formatters.formatHeaderDate(group.date),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = GlassTextPrimary
                         )
-                        HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
+                        HorizontalDivider(modifier = Modifier.padding(top = 4.dp), color = Color(0x33FFFFFF))
                     }
                 }
                 items(group.entries, key = { it.id }) { entry ->
@@ -732,31 +726,22 @@ private fun MeasurementsFab(
             val label = deviceName?.takeIf { it.isNotBlank() }?.let {
                 stringResource(id = R.string.measure_action_start_measurement_device, it)
             } ?: stringResource(id = R.string.measure_action_start_measurement)
-            ExtendedFloatingActionButton(
-                text = { Text(label) },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null
-                    )
-                },
+            GlassButton(
                 onClick = onStartMeasurement,
-                shape = InteractiveShape,
                 modifier = Modifier.padding(bottom = 12.dp)
-            )
+            ) {
+                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(label, color = Color.White)
+            }
         }
-        ExtendedFloatingActionButton(
-            text = { Text(text = stringResource(id = R.string.measure_action_add_manual)) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null
-                )
-            },
-            onClick = onAddManual,
-            shape = InteractiveShape,
-            modifier = Modifier.sizeIn(minWidth = 56.dp, minHeight = 56.dp)
-        )
+        GlassButton(
+            onClick = onAddManual
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(id = R.string.measure_action_add_manual), color = Color.White)
+        }
     }
 }
 
@@ -1134,26 +1119,12 @@ private fun SummaryTile(
     index: Int,
     modifier: Modifier = Modifier
 ) {
-    val baseContainer = if (index % 2 == 0) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
-    }
-    val containerColor = if (hasData) {
-        MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp)
-    } else {
-        baseContainer
-    }
-    val iconTint = if (hasData) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
-    val valueColor = if (hasData) accentColor else MaterialTheme.colorScheme.onSurface
+    val iconTint = if (hasData) accentColor else Color.White.copy(alpha = 0.5f)
+    val valueColor = if (hasData) accentColor else GlassTextSecondary
 
-    Surface(
+    LiquidGlassSurface(
         modifier = modifier.heightIn(min = 60.dp),
-        shape = InteractiveShape,
-        tonalElevation = if (hasData) 4.dp else 1.dp,
-        shadowElevation = 0.dp,
-        color = containerColor,
-        border = if (hasData) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        cornerRadius = 12.dp
     ) {
         Row(
             modifier = Modifier
@@ -1166,7 +1137,7 @@ private fun SummaryTile(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(iconTint.copy(alpha = 0.12f)),
+                    .background(iconTint.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = iconTint)
@@ -1175,7 +1146,7 @@ private fun SummaryTile(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = GlassTextSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1202,8 +1173,7 @@ private fun MeasurementCard(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    Card(
-        onClick = onClick,
+    LiquidGlassSurface(
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
@@ -1211,8 +1181,7 @@ private fun MeasurementCard(
                 onClick = onClick,
                 onLongClick = { menuExpanded = true }
             ),
-        shape = InteractiveShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        cornerRadius = 12.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1402,30 +1371,35 @@ private fun formatSecondaryValue(entry: MeasurementEntry): String = when (entry.
 
 @Composable
 private fun MeasurementsEmptyState(isSearch: Boolean) {
-    Column(
+    LiquidGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.SelfImprovement,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = if (isSearch) stringResource(id = R.string.measure_empty_search) else stringResource(id = R.string.measure_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-        Text(
-            text = stringResource(id = R.string.measure_empty_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            modifier = Modifier.padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.SelfImprovement,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = Color.White.copy(alpha = 0.7f)
+            )
+            Text(
+                text = if (isSearch) stringResource(id = R.string.measure_empty_search) else stringResource(id = R.string.measure_empty_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = GlassTextPrimary,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Text(
+                text = stringResource(id = R.string.measure_empty_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = GlassTextSecondary,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
     }
 }
 

@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -31,8 +29,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,6 +41,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.healthcodex.ui.theme.GlassButton
+import com.example.healthcodex.ui.theme.GlassTextPrimary
+import com.example.healthcodex.ui.theme.GlassTextSecondary
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import kotlin.math.roundToInt
 
 /**
@@ -62,11 +64,12 @@ fun ForecastRoute(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Прогноз") }
+                title = { Text("Прогноз", color = GlassTextPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        modifier = Modifier.fillMaxSize(),
-        // Rely on the outer scaffold's safe insets for consistent status/navigation spacing.
+        containerColor = Color.Transparent,
+        modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         if (state.isLoading) {
             LoadingState(
@@ -92,7 +95,7 @@ private fun LoadingState(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(color = Color.White)
     }
 }
 
@@ -111,18 +114,26 @@ private fun ForecastContent(
         item { ForecastSummaryCard(forecast) }
         if (forecast.profileMissing) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                // Unified empty-state glass card
+                LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = "Нет данных для прогноза",
                             style = MaterialTheme.typography.titleMedium,
+                            color = GlassTextPrimary,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Добавьте рост, вес и диагнозы, чтобы система могла рассчитать прогноз.")
-                        Spacer(modifier = Modifier.height(12.dp))
-                        TextButton(onClick = onFillProfile) {
-                            Text("Перейти к заполнению профиля")
+                        Text(
+                            text = "Добавьте рост, вес и диагнозы, чтобы система могла рассчитать прогноз.",
+                            color = GlassTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        GlassButton(onClick = onFillProfile) {
+                            Text("Заполнить профиль", color = Color.White)
                         }
                     }
                 }
@@ -143,10 +154,10 @@ private fun ForecastContent(
             if (forecast.recommendations.isNotEmpty()) {
                 item { SectionHeader("Рекомендации на ближайшее время") }
                 item {
-                    Card {
+                    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             forecast.recommendations.forEachIndexed { index, recommendation ->
-                                Text(text = "• $recommendation", style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "• $recommendation", style = MaterialTheme.typography.bodyMedium, color = GlassTextSecondary)
                                 if (index != forecast.recommendations.lastIndex) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
@@ -161,21 +172,23 @@ private fun ForecastContent(
 
 @Composable
 private fun ForecastSummaryCard(forecast: HealthForecast) {
-    Card {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = forecast.headline,
                 style = MaterialTheme.typography.headlineSmall,
+                color = GlassTextPrimary,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium)
+            Text(text = forecast.detail, style = MaterialTheme.typography.bodyMedium, color = GlassTextSecondary)
             if (!forecast.profileMissing && forecast.riskProbability != null) {
                 val percent = (forecast.riskProbability * 100).roundToInt().coerceIn(0, 100)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "Вероятность риска: $percent%",
                     style = MaterialTheme.typography.titleMedium,
+                    color = GlassTextPrimary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -188,35 +201,34 @@ private fun ForecastSummaryCard(forecast: HealthForecast) {
                         percent < 33 -> Color(0xFF2E7D32)
                         percent < 66 -> Color(0xFFF57F17)
                         else -> Color(0xFFC62828)
-                    }
+                    },
+                    trackColor = Color(0x33FFFFFF)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = if (forecast.usedTflite) "Прогноз с использованием нейросети" else "Прогноз по эвристике профиля",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = GlassTextSecondary
                 )
             }
             if (!forecast.profileMissing) {
                 Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider()
+                HorizontalDivider(color = Color(0x33FFFFFF))
                 Spacer(modifier = Modifier.height(12.dp))
                 AssistChip(
                     onClick = {},
                     label = {
                         Text(
-                            if (forecast.usedTflite) {
-                                "Прогноз с использованием нейросети"
-                            } else {
-                                "Обновлено на основе профиля"
-                            }
+                            if (forecast.usedTflite) "Прогноз с использованием нейросети"
+                            else "Обновлено на основе профиля",
+                            color = GlassTextPrimary
                         )
                     },
                     leadingIcon = {
-                        Icon(Icons.Filled.Info, contentDescription = null)
+                        Icon(Icons.Filled.Info, contentDescription = null, tint = GlassTextSecondary)
                     },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        containerColor = Color(0x33FFFFFF)
                     )
                 )
             }
@@ -229,6 +241,7 @@ private fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
+        color = GlassTextPrimary,
         fontWeight = FontWeight.SemiBold
     )
 }
@@ -236,19 +249,19 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun InsightCard(insight: WellnessInsight) {
     val (icon, tint) = when (insight.severity) {
-        InsightSeverity.POSITIVE -> Icons.Filled.CheckCircle to Color(0xFF2E7D32)
-        InsightSeverity.WARNING -> Icons.Filled.Warning to Color(0xFFF57F17)
-        InsightSeverity.CRITICAL -> Icons.Filled.Warning to Color(0xFFC62828)
+        InsightSeverity.POSITIVE -> Icons.Filled.CheckCircle to Color(0xFF4CAF50)
+        InsightSeverity.WARNING -> Icons.Filled.Warning to Color(0xFFFFA726)
+        InsightSeverity.CRITICAL -> Icons.Filled.Warning to Color(0xFFEF5350)
     }
-    Card {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, tint = tint)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = insight.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(text = insight.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = GlassTextPrimary)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = insight.message, style = MaterialTheme.typography.bodyMedium)
+            Text(text = insight.message, style = MaterialTheme.typography.bodyMedium, color = GlassTextSecondary)
         }
     }
 }
