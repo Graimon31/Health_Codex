@@ -1086,15 +1086,14 @@ private fun SummarySection(
                 verticalArrangement = Arrangement.spacedBy(spacing),
                 maxItemsInEachRow = columns
             ) {
-                items.forEachIndexed { index, tile ->
+                items.forEach { tile ->
                     SummaryTile(
                         modifier = Modifier.width(itemWidth),
                         title = tile.title,
                         value = tile.value,
                         icon = tile.icon,
                         accentColor = tile.accentColor,
-                        hasData = tile.hasData,
-                        index = index
+                        hasData = tile.hasData
                     )
                 }
             }
@@ -1117,7 +1116,6 @@ private fun SummaryTile(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     accentColor: Color,
     hasData: Boolean,
-    index: Int,
     modifier: Modifier = Modifier
 ) {
     val iconTint = if (hasData) accentColor else Color.White.copy(alpha = 0.5f)
