@@ -1896,7 +1896,8 @@ private fun MeasurementEditorDialog(
         },
         text = {
             EditorContent(form = form, onUpdate = onUpdate)
-        }
+        },
+        shape = InteractiveShape
     )
 }
 
