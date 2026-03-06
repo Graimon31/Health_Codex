@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -88,16 +87,9 @@ fun LiquidGlassSurface(
         GlassSurfaceFallback
     }
 
-    val blurModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        Modifier.blur(radius = 20.dp)
-    } else {
-        Modifier
-    }
-
     Box(
         modifier = modifier
             .clip(shape)
-            .then(blurModifier)
             .background(surfaceColor)
             .border(
                 width = 1.dp,
