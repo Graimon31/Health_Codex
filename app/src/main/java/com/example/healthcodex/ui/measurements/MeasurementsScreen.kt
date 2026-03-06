@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -1903,7 +1904,12 @@ private fun MeasurementEditorDialog(
 
 @Composable
 private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) -> MeasurementForm) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         MeasurementTypeDropdown(form.type) { newType ->
             onUpdate { it.copy(type = newType) }
         }
@@ -1940,12 +1946,14 @@ private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) ->
                     onTimeSelected = { newTime -> onUpdate { it.copy(endTime = newTime) } }
                 )
                 OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
                     value = form.durationMinutes,
                     onValueChange = { value -> onUpdate { it.copy(durationMinutes = value) } },
                     label = { Text(stringResource(id = R.string.measure_duration_label)) },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
                 )
                 OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
                     value = form.statusText,
                     onValueChange = { value -> onUpdate { it.copy(statusText = value) } },
                     label = { Text(stringResource(id = R.string.measure_status_label)) }
@@ -1975,6 +1983,7 @@ private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) ->
                     label = stringResource(id = R.string.measure_field_respiratory)
                 )
                 OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
                     value = form.statusText,
                     onValueChange = { value -> onUpdate { it.copy(statusText = value) } },
                     label = { Text(stringResource(id = R.string.measure_status_label)) }
@@ -1988,6 +1997,7 @@ private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) ->
                 )
                 if (form.type == MeasurementType.WEIGHT) {
                     OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
                         value = form.statusText,
                         onValueChange = { value -> onUpdate { it.copy(statusText = value) } },
                         label = { Text(stringResource(id = R.string.measure_status_label)) }
@@ -1998,22 +2008,26 @@ private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) ->
         SourceSelector(form.source) { source -> onUpdate { it.copy(source = source) } }
         ConfidenceSelector(form.confidence) { conf -> onUpdate { it.copy(confidence = conf) } }
         OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = form.deviceName,
             onValueChange = { value -> onUpdate { it.copy(deviceName = value) } },
             label = { Text(stringResource(id = R.string.measure_device_name)) }
         )
         OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = form.deviceAddress,
             onValueChange = { value -> onUpdate { it.copy(deviceAddress = value) } },
             label = { Text(stringResource(id = R.string.measure_device_address)) }
         )
         OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = form.note,
             onValueChange = { value -> onUpdate { it.copy(note = value) } },
             label = { Text(stringResource(id = R.string.measure_note_label)) },
             minLines = 2
         )
         OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = form.tags,
             onValueChange = { value -> onUpdate { it.copy(tags = value) } },
             label = { Text(stringResource(id = R.string.measure_tags_label)) }
@@ -2024,6 +2038,7 @@ private fun EditorContent(form: MeasurementForm, onUpdate: ((MeasurementForm) ->
 @Composable
 private fun NumericField(value: String, onChange: (String) -> Unit, label: String) {
     OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
@@ -2061,11 +2076,12 @@ private fun MeasurementTypeDropdown(selected: MeasurementType, onSelected: (Meas
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SourceSelector(selected: MeasurementSource, onSelected: (MeasurementSource) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(text = stringResource(id = R.string.measure_source_label))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MeasurementSource.values().forEach { source ->
                 AssistChip(
                     onClick = { onSelected(source) },
@@ -2082,11 +2098,12 @@ private fun SourceSelector(selected: MeasurementSource, onSelected: (Measurement
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ConfidenceSelector(selected: MeasurementConfidence, onSelected: (MeasurementConfidence) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(text = stringResource(id = R.string.measure_confidence_label))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MeasurementConfidence.values().forEach { confidence ->
                 AssistChip(
                     onClick = { onSelected(confidence) },
