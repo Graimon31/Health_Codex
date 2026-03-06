@@ -65,6 +65,23 @@ class MeasurementsRepository(
         connectedDeviceDao.delete(device.toEntity())
     }
 
+    /**
+     * Inserts synthetic demo measurements if none exist yet.
+     * All generated entries carry the "demo" tag so they can be removed cleanly.
+     */
+    suspend fun seedDemoData() = withContext(ioDispatcher) {
+        val existing = dao.getDemoMeasurements()
+        if (existing.isEmpty()) {
+            val entities = DemoDataGenerator.generate().map { it.toEntity() }
+            dao.insertAll(entities)
+        }
+    }
+
+    /** Removes all measurements carrying the "demo" tag. */
+    suspend fun clearDemoData() = withContext(ioDispatcher) {
+        dao.deleteDemoMeasurements()
+    }
+
     private fun MeasurementEntity.toDomain(): MeasurementEntry = MeasurementEntry(
         id = id,
         type = type,

@@ -34,7 +34,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -62,6 +64,21 @@ class MeasurementsViewModel(
         observeMeasurements()
         observeBleStatus()
         observeConnectedDevices()
+        observeDemoMode()
+    }
+
+    private fun observeDemoMode() {
+        viewModelScope.launch {
+            profileRepository.demoMode.distinctUntilChanged().collectLatest { enabled ->
+                if (enabled) {
+                    repository.seedDemoData()
+                    _events.emit(MeasurementsEvent.ShowMessage("Демо-режим включён: загружены синтетические данные"))
+                } else {
+                    repository.clearDemoData()
+                    _events.emit(MeasurementsEvent.ShowMessage("Демо-режим выключен: синтетические данные удалены"))
+                }
+            }
+        }
     }
 
     private fun observeMeasurements() {

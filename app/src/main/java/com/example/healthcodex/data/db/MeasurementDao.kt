@@ -28,4 +28,13 @@ interface MeasurementDao {
 
     @Delete
     suspend fun delete(entity: MeasurementEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<MeasurementEntity>)
+
+    @Query("SELECT * FROM measurements WHERE tags LIKE '%\"demo\"%'")
+    suspend fun getDemoMeasurements(): List<MeasurementEntity>
+
+    @Query("DELETE FROM measurements WHERE tags LIKE '%\"demo\"%'")
+    suspend fun deleteDemoMeasurements()
 }

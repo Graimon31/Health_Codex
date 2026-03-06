@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.healthcodex.HealthCodexApp
 import com.example.healthcodex.data.measurements.ConnectedDevice
 import com.example.healthcodex.data.measurements.DeviceConnectionStatus
 import com.example.healthcodex.data.measurements.MeasurementDeviceType
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -57,7 +59,7 @@ class DeviceConnectViewModel(
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DeviceConnectUiState(discovered = demoDevices()))
+    private val _uiState = MutableStateFlow(DeviceConnectUiState())
     val uiState: StateFlow<DeviceConnectUiState> = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<DeviceConnectEvent>()
@@ -65,6 +67,15 @@ class DeviceConnectViewModel(
 
     init {
         observeConnectedDevices()
+        observeDemoMode()
+    }
+
+    private fun observeDemoMode() {
+        viewModelScope.launch {
+            profileRepository.demoMode.collectLatest { demoEnabled ->
+                _uiState.update { it.copy(discovered = if (demoEnabled) demoDevices() else emptyList()) }
+            }
+        }
     }
 
     private fun observeConnectedDevices() {
@@ -81,7 +92,8 @@ class DeviceConnectViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isScanning = true) }
             delay(1200)
-            _uiState.update { it.copy(isScanning = false, discovered = demoDevices()) }
+            val demoEnabled = profileRepository.demoMode.first()
+            _uiState.update { it.copy(isScanning = false, discovered = if (demoEnabled) demoDevices() else emptyList()) }
         }
     }
 
@@ -170,8 +182,10 @@ class DeviceConnectViewModel(
     companion object {
         fun factory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val measurementsRepository = MeasurementsRepository(context)
-                val profileRepository = ProfileRepository(context)
+                val appContext = context.applicationContext ?: context
+                val app = appContext as? HealthCodexApp
+                val measurementsRepository = app?.measurementsRepository ?: MeasurementsRepository(appContext)
+                val profileRepository = app?.profileRepository ?: ProfileRepository(appContext)
                 @Suppress("UNCHECKED_CAST")
                 return DeviceConnectViewModel(measurementsRepository, profileRepository) as T
             }
