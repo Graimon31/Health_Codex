@@ -1423,7 +1423,12 @@ private fun MeasurementsFilterSheet(
     val customPeriod = filter.period as? MeasurementPeriod.Custom
     val availableDevices = state.connectedDevices
     val listState = rememberLazyListState()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF1A0A3D),
+        scrimColor = Color(0xBB000000)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
