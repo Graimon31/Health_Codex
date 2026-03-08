@@ -835,10 +835,9 @@ private fun MeasurementTypeChip(
     selected: Boolean,
     onToggle: (MeasurementType) -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
-    val background = if (selected) colors.secondaryContainer else colors.surface
-    val contentColor = if (selected) colors.onSecondaryContainer else colors.onSurface
-    val borderColor = if (selected) colors.secondary else colors.outline
+    val background = if (selected) Color(0x557B52FF) else Color(0x26FFFFFF)
+    val contentColor = Color.White
+    val borderColor = if (selected) Color(0xFFAA88FF) else Color(0x55FFFFFF)
     val stateText = if (selected) {
         stringResource(id = R.string.measure_type_selected_state)
     } else {
@@ -885,10 +884,9 @@ private fun SheetToggleChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colors = MaterialTheme.colorScheme
-    val background = if (selected) colors.secondaryContainer else colors.surface
-    val content = if (selected) colors.onSecondaryContainer else colors.onSurface
-    val borderColor = if (selected) colors.secondary else colors.outline
+    val background = if (selected) Color(0x557B52FF) else Color(0x26FFFFFF)
+    val content = Color.White
+    val borderColor = if (selected) Color(0xFFAA88FF) else Color(0x55FFFFFF)
     val stateText = if (selected) {
         stringResource(id = R.string.measure_sheet_chip_selected)
     } else {
@@ -1384,9 +1382,11 @@ private fun MeasurementsFilterSheet(
     val customPeriod = filter.period as? MeasurementPeriod.Custom
     val availableDevices = state.connectedDevices
     val listState = rememberLazyListState()
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        shape = sheetShape,
         containerColor = Color.Transparent,
         scrimColor = Color(0xBB000000),
         dragHandle = {
@@ -1403,6 +1403,7 @@ private fun MeasurementsFilterSheet(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .clip(sheetShape)
                 .background(
                     Brush.verticalGradient(
                         listOf(Color(0xEE2B1464), Color(0xF21A0A3D))
