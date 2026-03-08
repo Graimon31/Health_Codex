@@ -268,8 +268,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
                 },
                 exportMenuVisible = exportMenuVisible,
                 bleConnected = uiState.bleConnected,
-                bleDeviceName = uiState.bleDeviceName,
-                windowInsets = WindowInsets(0.dp)
+                bleDeviceName = uiState.bleDeviceName
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
