@@ -300,6 +300,24 @@ class MeasurementsViewModel(
         }
     }
 
+    fun saveDemoMeasurement(hr: Int, deviceName: String, deviceId: Long?) {
+        viewModelScope.launch {
+            val entry = MeasurementEntry(
+                id = 0,
+                type = MeasurementType.HEART_RATE,
+                timestamp = java.time.Instant.now(),
+                source = MeasurementSource.DEVICE,
+                deviceId = deviceId,
+                deviceType = MeasurementDeviceType.WEARABLE,
+                deviceName = deviceName,
+                details = MeasurementDetails(primaryValue = hr.toDouble()),
+                tags = listOf("demo")
+            )
+            repository.upsert(entry)
+            _events.emit(MeasurementsEvent.ShowMessage("Измерение сохранено: $hr уд/мин"))
+        }
+    }
+
     fun dismissError() {
         _uiState.update { it.copy(errorMessage = null) }
     }

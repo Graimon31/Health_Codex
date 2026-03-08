@@ -63,6 +63,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
+import ButtonDefaults
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
@@ -85,8 +86,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -156,6 +161,7 @@ import com.example.healthcodex.util.Formatters
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Calendar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -178,6 +184,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
     val scope = rememberCoroutineScope()
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var filterSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var demoMeasurementVisible by remember { mutableStateOf(false) }
     var exportMenuVisible by remember { mutableStateOf(false) }
     var searchQuery by rememberSaveable(uiState.filter.query) { mutableStateOf(uiState.filter.query) }
 
@@ -236,6 +243,18 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
         )
     }
 
+    if (demoMeasurementVisible) {
+        DemoMeasurementSheet(
+            deviceName = uiState.bleDeviceName ?: "Demo",
+            deviceId = uiState.connectedDevices.firstOrNull { it.name == uiState.bleDeviceName }?.id,
+            onSave = { hr, name, id ->
+                viewModel.saveDemoMeasurement(hr, name, id)
+                demoMeasurementVisible = false
+            },
+            onDismiss = { demoMeasurementVisible = false }
+        )
+    }
+
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isRefreshing,
         onRefresh = { viewModel.refresh() }
@@ -278,13 +297,7 @@ fun MeasurementsRoute(navController: NavController, paddingValues: PaddingValues
             MeasurementsFab(
                 connected = uiState.bleConnected,
                 deviceName = uiState.bleDeviceName,
-                onStartMeasurement = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            context.getString(R.string.measure_ble_stub)
-                        )
-                    }
-                },
+                onStartMeasurement = { demoMeasurementVisible = true },
                 onAddManual = {
                     viewModel.openEditorForNew(MeasurementType.HEART_RATE)
                 }
@@ -743,6 +756,145 @@ private fun MeasurementsFab(
             Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(id = R.string.measure_action_add_manual), color = Color.White)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DemoMeasurementSheet(
+    deviceName: String,
+    deviceId: Long?,
+    onSave: (hr: Int, deviceName: String, deviceId: Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
+    // Animate heart rate between 62 and 88 bpm
+    val hrFloat = remember { Animatable(72f) }
+    var measuring by remember { mutableStateOf(true) }
+
+    LaunchedEffect(measuring) {
+        if (measuring) {
+            repeat(20) {
+                val target = (62..88).random().toFloat()
+                hrFloat.animateTo(target, animationSpec = tween(700))
+                delay(600)
+            }
+            measuring = false
+        }
+    }
+
+    val heartScale = remember { Animatable(1f) }
+    LaunchedEffect(measuring) {
+        if (measuring) {
+            while (true) {
+                heartScale.animateTo(1.25f, animationSpec = tween(300))
+                heartScale.animateTo(1f, animationSpec = tween(300))
+                delay(300)
+            }
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = sheetShape,
+        containerColor = Color.Transparent,
+        scrimColor = Color(0xBB000000),
+        windowInsets = WindowInsets(0),
+        dragHandle = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 10.dp)
+                        .size(width = 36.dp, height = 4.dp)
+                        .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                )
+            }
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(sheetShape)
+                .background(Brush.verticalGradient(listOf(Color(0xEE2B1464), Color(0xF21A0A3D))))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Text(
+                    text = if (measuring) "Измерение…" else "Готово",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+                Text(
+                    text = deviceName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = Color(0xFFFF5555),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .scale(heartScale.value)
+                )
+
+                Text(
+                    text = "${hrFloat.value.toInt()} уд/мин",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                if (measuring) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(50)),
+                        color = Color(0xFFAA88FF),
+                        trackColor = Color.White.copy(alpha = 0.15f)
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TextButton(
+                            onClick = onDismiss,
+                            shape = InteractiveShape,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color.White.copy(alpha = 0.7f)
+                            )
+                        ) {
+                            Text("Отмена")
+                        }
+                        Button(
+                            onClick = { onSave(hrFloat.value.toInt(), deviceName, deviceId) },
+                            shape = InteractiveShape,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF7B52FF)
+                            )
+                        ) {
+                            Text("Сохранить", color = Color.White)
+                        }
+                    }
+                }
+            }
         }
     }
 }
