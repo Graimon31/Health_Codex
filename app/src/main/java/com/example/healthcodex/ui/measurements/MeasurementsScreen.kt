@@ -85,6 +85,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -745,58 +746,33 @@ private fun MeasurementsFab(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodSelector(selected: MeasurementPeriod, onPeriodSelected: (MeasurementPeriod) -> Unit) {
-    val periods = listOf(
-        MeasurementPeriod.Today,
-        MeasurementPeriod.Week,
-        MeasurementPeriod.Month
-    )
-    val segmentedColors = SegmentedButtonDefaults.colors(
-        activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-        activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        activeBorderColor = MaterialTheme.colorScheme.primary,
-        inactiveContainerColor = Color.Transparent,
-        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-        inactiveBorderColor = MaterialTheme.colorScheme.outline
-    )
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_filters_period))
-        SingleChoiceSegmentedButtonRow(
+        Row(
             modifier = Modifier
                 .padding(top = 6.dp)
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            periods.forEachIndexed { index, period ->
-                SegmentedButton(
+            listOf(MeasurementPeriod.Today, MeasurementPeriod.Week, MeasurementPeriod.Month).forEach { period ->
+                SheetToggleChip(
+                    label = stringResource(id = period.labelRes),
                     selected = selected::class == period::class,
-                    onClick = { onPeriodSelected(period) },
-                    shape = SegmentedButtonDefaults.itemShape(index, periods.size, baseShape = InteractiveShape),
-                    colors = segmentedColors
-                ) {
-                    Text(
-                        text = stringResource(id = period.labelRes),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+                    onClick = { onPeriodSelected(period) }
+                )
             }
-            SegmentedButton(
+            SheetToggleChip(
+                label = stringResource(id = R.string.measure_period_custom),
                 selected = selected is MeasurementPeriod.Custom,
                 onClick = {
                     val custom = selected as? MeasurementPeriod.Custom
                     val start = custom?.start ?: LocalDate.now().minusDays(6)
                     val end = custom?.end ?: LocalDate.now()
                     onPeriodSelected(MeasurementPeriod.Custom(start, end))
-                },
-                shape = SegmentedButtonDefaults.itemShape(periods.size, periods.size + 1, baseShape = InteractiveShape),
-                colors = segmentedColors
-            ) {
-                Text(
-                    text = stringResource(id = R.string.measure_period_custom),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
+                }
+            )
         }
     }
 }
@@ -825,7 +801,6 @@ private fun TypeSelector(selectedTypes: Set<MeasurementType>, onTypeToggle: (Mea
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeviceTypeSelector(selected: DeviceTypeFilter, onSelected: (DeviceTypeFilter) -> Unit) {
     val entries = listOf(
@@ -833,33 +808,20 @@ private fun DeviceTypeSelector(selected: DeviceTypeFilter, onSelected: (DeviceTy
         DeviceTypeFilter.Wearable to stringResource(id = R.string.measure_sheet_device_type_wearable),
         DeviceTypeFilter.NonWearable to stringResource(id = R.string.measure_sheet_device_type_non_wearable)
     )
-    val segmentedColors = SegmentedButtonDefaults.colors(
-        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-        activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        activeBorderColor = MaterialTheme.colorScheme.secondary,
-        inactiveContainerColor = Color.Transparent,
-        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-        inactiveBorderColor = MaterialTheme.colorScheme.outline
-    )
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionTitle(text = stringResource(id = R.string.measure_sheet_device_type_title))
-        SingleChoiceSegmentedButtonRow(
+        Row(
             modifier = Modifier
                 .padding(top = 6.dp)
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            entries.forEachIndexed { index, (value, label) ->
-                SegmentedButton(
+            entries.forEach { (value, label) ->
+                SheetToggleChip(
+                    label = label,
                     selected = selected::class == value::class,
-                    onClick = { onSelected(value) },
-                    shape = SegmentedButtonDefaults.itemShape(index, entries.size, baseShape = InteractiveShape),
-                    colors = segmentedColors
-                ) {
-                    Text(
-                        text = label,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+                    onClick = { onSelected(value) }
+                )
             }
         }
     }
@@ -1426,9 +1388,28 @@ private fun MeasurementsFilterSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF1A0A3D),
-        scrimColor = Color(0xBB000000)
+        containerColor = Color.Transparent,
+        scrimColor = Color(0xBB000000),
+        dragHandle = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 10.dp)
+                        .size(width = 36.dp, height = 4.dp)
+                        .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                )
+            }
+        }
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xEE2B1464), Color(0xF21A0A3D))
+                    )
+                )
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1630,6 +1611,7 @@ private fun MeasurementsFilterSheet(
                 }
             }
         }
+        } // LiquidGlass Box
     }
 }
 
