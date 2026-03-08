@@ -1389,6 +1389,7 @@ private fun MeasurementsFilterSheet(
         shape = sheetShape,
         containerColor = Color.Transparent,
         scrimColor = Color(0xBB000000),
+        windowInsets = WindowInsets(0),
         dragHandle = {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Box(
