@@ -161,6 +161,7 @@ import kotlin.math.roundToInt
 
 private val InteractiveRadius = 12.dp
 private val InteractiveShape = RoundedCornerShape(InteractiveRadius)
+private val ChipShape = RoundedCornerShape(50)
 private val AllMeasurementTypes = MeasurementType.values().toSet()
 
 /**
@@ -851,7 +852,7 @@ private fun MeasurementTypeChip(
             this.selected = selected
             stateDescription = stateText
         },
-        shape = InteractiveShape,
+        shape = ChipShape,
         color = background,
         contentColor = contentColor,
         border = BorderStroke(1.dp, borderColor),
@@ -860,7 +861,7 @@ private fun MeasurementTypeChip(
         Row(
             modifier = Modifier
                 .heightIn(min = 40.dp)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 18.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -897,8 +898,7 @@ private fun SheetToggleChip(
 
     Surface(
         modifier = modifier
-            .heightIn(min = 44.dp)
-            .clip(InteractiveShape)
+            .heightIn(min = 40.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = rememberRipple(bounded = true),
@@ -910,7 +910,7 @@ private fun SheetToggleChip(
                 this.selected = selected
                 stateDescription = stateText
             },
-        shape = InteractiveShape,
+        shape = ChipShape,
         color = background,
         contentColor = content,
         border = BorderStroke(1.dp, borderColor),
@@ -918,8 +918,7 @@ private fun SheetToggleChip(
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 18.dp, vertical = 9.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
