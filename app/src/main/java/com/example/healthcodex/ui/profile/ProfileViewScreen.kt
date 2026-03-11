@@ -4,6 +4,7 @@ package com.example.healthcodex.ui.profile
 import android.app.Application
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -20,10 +20,9 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Share
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.healthcodex.feature.profile.ProfileExportImport
+import com.example.healthcodex.ui.theme.GlassButton
+import com.example.healthcodex.ui.theme.GlassOutlinedButton
+import com.example.healthcodex.ui.theme.GlassTextPrimary
+import com.example.healthcodex.ui.theme.GlassTextSecondary
+import com.example.healthcodex.ui.theme.LiquidGlassSurface
 import com.example.healthcodex.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,10 +76,26 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
     }
 
     val profile = state.profile
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            ProfileExportImport.importProfile(context, it) { imported ->
+                imported?.let { profileResult ->
+                    viewModel.updateField { _ -> ProfileForm.fromProfile(profileResult) }
+                    viewModel.saveProfile()
+                }
+            }
+        }
+    }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Профиль") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Профиль", color = GlassTextPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color.Transparent,
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
@@ -81,14 +103,8 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                 .padding(innerPadding)
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = "Профиль",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
             if (state.biometricLockEnabled && !state.isAuthenticated) {
                 BiometricLockCard(onUnlock = viewModel::unlockProfile)
             } else if (profile == null) {
@@ -105,43 +121,55 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                 DeviceCard(profile, onChange = { showBleDialog = true })
                 Spacer(modifier = Modifier.height(12.dp))
                 PrivacyCard(profile)
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.navigate(ProfileNav.edit) }) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
+                Spacer(modifier = Modifier.height(20.dp))
+                // Action buttons
+                GlassButton(
+                    onClick = { navController.navigate(ProfileNav.edit) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Редактировать")
+                    Text("Редактировать", color = Color.White)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = { navController.navigate(ProfileNav.security) }) {
-                    Icon(Icons.Default.Lock, contentDescription = null)
+                GlassOutlinedButton(
+                    onClick = { navController.navigate(ProfileNav.security) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Безопасность")
+                    Text("Безопасность", color = Color.White)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = { ProfileExportImport.shareIce(context, profile) }) {
-                    Icon(Icons.Default.Share, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Поделиться ICE")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = { ProfileExportImport.exportProfile(context, profile) }) {
-                    Icon(Icons.Default.FileDownload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Экспорт в JSON")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                ElevatedButton(onClick = {
-                    ProfileExportImport.importProfile(context) { imported ->
-                        imported?.let {
-                            viewModel.updateField { _ -> ProfileForm.fromProfile(it) }
-                            viewModel.saveProfile()
-                        }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    GlassOutlinedButton(
+                        onClick = { ProfileExportImport.shareIce(context, profile) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("ICE", color = Color.White)
                     }
-                }) {
-                    Icon(Icons.Default.FileUpload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Импорт из JSON")
+                    GlassOutlinedButton(
+                        onClick = { ProfileExportImport.exportProfile(context, profile) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileDownload, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Экспорт", color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    GlassOutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json")) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.FileUpload, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Импорт", color = Color.White)
+                    }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -159,14 +187,22 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
 
 @Composable
 private fun EmptyProfileCard(onFill: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Профиль не заполнен", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Профиль не заполнен",
+                style = MaterialTheme.typography.titleMedium,
+                color = GlassTextPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Добавьте данные для персонализированного мониторинга")
+            Text(
+                text = "Добавьте данные для персонализированного мониторинга",
+                color = GlassTextSecondary
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onFill) {
-                Text("Заполнить")
+            GlassButton(onClick = onFill) {
+                Text("Заполнить профиль", color = Color.White)
             }
         }
     }
@@ -174,20 +210,25 @@ private fun EmptyProfileCard(onFill: () -> Unit) {
 
 @Composable
 private fun BiometricLockCard(onUnlock: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Профиль защищён",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = GlassTextPrimary,
+                fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Для просмотра требуется биометрия. Нажмите, чтобы выполнить stub-аутентификацию.")
+            Text(
+                "Для просмотра требуется биометрия. Нажмите, чтобы выполнить stub-аутентификацию.",
+                color = GlassTextSecondary
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onUnlock) {
-                Text("Разблокировать")
+            GlassButton(onClick = onUnlock) {
+                Text("Разблокировать", color = Color.White)
             }
         }
     }
@@ -196,17 +237,22 @@ private fun BiometricLockCard(onUnlock: () -> Unit) {
 @Composable
 private fun ProfileSummaryCard(state: ProfileViewState) {
     val profile = state.profile ?: return
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = profile.fullName.ifBlank { "Без имени" }, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = profile.fullName.ifBlank { "Без имени" },
+                style = MaterialTheme.typography.titleMedium,
+                color = GlassTextPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Возраст: ${state.age ?: "—"}")
-            Text("Пол: ${profile.sex}")
-            Text("Рост: ${profile.heightCm?.let { "$it см" } ?: "—"}")
-            Text("Вес: ${profile.weightKg?.let { String.format("%.1f кг", it) } ?: "—"}")
-            Text("BMI: ${state.bmi}")
+            Text("Возраст: ${state.age ?: "—"}", color = GlassTextSecondary)
+            Text("Пол: ${profile.sex}", color = GlassTextSecondary)
+            Text("Рост: ${profile.heightCm?.let { "$it см" } ?: "—"}", color = GlassTextSecondary)
+            Text("Вес: ${profile.weightKg?.let { String.format("%.1f кг", it) } ?: "—"}", color = GlassTextSecondary)
+            Text("BMI: ${state.bmi}", color = GlassTextSecondary)
             profile.birthDate?.let {
-                Text("Дата рождения: ${Formatters.formatDate(it)}")
+                Text("Дата рождения: ${Formatters.formatDate(it)}", color = GlassTextSecondary)
             }
         }
     }
@@ -214,19 +260,19 @@ private fun ProfileSummaryCard(state: ProfileViewState) {
 
 @Composable
 private fun MedicalCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Медицинский статус", style = MaterialTheme.typography.titleMedium)
+            Text("Медицинский статус", style = MaterialTheme.typography.titleMedium, color = GlassTextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Диагнозы: ${profile.conditions.joinToString().ifBlank { "нет" }}")
-            Text("Аллергии: ${profile.allergies.joinToString().ifBlank { "нет" }}")
+            Text("Диагнозы: ${profile.conditions.joinToString().ifBlank { "нет" }}", color = GlassTextSecondary)
+            Text("Аллергии: ${profile.allergies.joinToString().ifBlank { "нет" }}", color = GlassTextSecondary)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Медикаменты:", fontWeight = FontWeight.Medium)
+            Text("Медикаменты:", fontWeight = FontWeight.Medium, color = GlassTextPrimary)
             if (profile.medications.isEmpty()) {
-                Text("Не указаны")
+                Text("Не указаны", color = GlassTextSecondary)
             } else {
                 profile.medications.forEach { med ->
-                    Text("• ${med.name} — ${med.dose} (${med.scheduleNote})")
+                    Text("• ${med.name} — ${med.dose} (${med.scheduleNote})", color = GlassTextSecondary)
                 }
             }
         }
@@ -235,45 +281,45 @@ private fun MedicalCard(profile: com.example.healthcodex.data.profile.UserProfil
 
 @Composable
 private fun BaselineCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Нормы и пороги", style = MaterialTheme.typography.titleMedium)
+            Text("Нормы и пороги", style = MaterialTheme.typography.titleMedium, color = GlassTextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Пульс в покое: ${profile.restingHr ?: "—"}")
-            Text("САД базовое: ${profile.bpBaselineSystolic ?: "—"}")
-            Text("ДАД базовое: ${profile.bpBaselineDiastolic ?: "—"}")
-            Text("Порог HR: ${profile.hrHigh ?: "—"}")
-            Text("Порог САД: ${profile.bpSysHigh ?: "—"}")
-            Text("Порог ДАД: ${profile.bpDiaHigh ?: "—"}")
+            Text("Пульс в покое: ${profile.restingHr ?: "—"}", color = GlassTextSecondary)
+            Text("САД базовое: ${profile.bpBaselineSystolic ?: "—"}", color = GlassTextSecondary)
+            Text("ДАД базовое: ${profile.bpBaselineDiastolic ?: "—"}", color = GlassTextSecondary)
+            Text("Порог HR: ${profile.hrHigh ?: "—"}", color = GlassTextSecondary)
+            Text("Порог САД: ${profile.bpSysHigh ?: "—"}", color = GlassTextSecondary)
+            Text("Порог ДАД: ${profile.bpDiaHigh ?: "—"}", color = GlassTextSecondary)
         }
     }
 }
 
 @Composable
 private fun ContactsCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Контакты", style = MaterialTheme.typography.titleMedium)
+            Text("Контакты", style = MaterialTheme.typography.titleMedium, color = GlassTextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("ICE: ${profile.emergencyName.orEmpty()} ${profile.emergencyPhone.orEmpty()}")
-            Text("Врач: ${profile.doctorName.orEmpty()} ${profile.doctorPhone.orEmpty()}")
+            Text("ICE: ${profile.emergencyName.orEmpty()} ${profile.emergencyPhone.orEmpty()}", color = GlassTextSecondary)
+            Text("Врач: ${profile.doctorName.orEmpty()} ${profile.doctorPhone.orEmpty()}", color = GlassTextSecondary)
         }
     }
 }
 
 @Composable
 private fun DeviceCard(profile: com.example.healthcodex.data.profile.UserProfile, onChange: () -> Unit) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("BLE устройство", style = MaterialTheme.typography.titleMedium)
+            Text("BLE устройство", style = MaterialTheme.typography.titleMedium, color = GlassTextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Имя: ${profile.bleDeviceName ?: "Не привязано"}")
-            Text("Адрес: ${profile.bleDeviceAddress ?: "—"}")
+            Text("Имя: ${profile.bleDeviceName ?: "Не привязано"}", color = GlassTextSecondary)
+            Text("Адрес: ${profile.bleDeviceAddress ?: "—"}", color = GlassTextSecondary)
             Spacer(modifier = Modifier.height(8.dp))
-            ElevatedButton(onClick = onChange) {
-                Icon(Icons.Default.Link, contentDescription = null)
+            GlassOutlinedButton(onClick = onChange) {
+                Icon(Icons.Default.Link, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Изменить привязку")
+                Text("Изменить привязку", color = Color.White)
             }
         }
     }
@@ -281,15 +327,15 @@ private fun DeviceCard(profile: com.example.healthcodex.data.profile.UserProfile
 
 @Composable
 private fun PrivacyCard(profile: com.example.healthcodex.data.profile.UserProfile) {
-    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Конфиденциальность", style = MaterialTheme.typography.titleMedium)
+            Text("Конфиденциальность", style = MaterialTheme.typography.titleMedium, color = GlassTextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Поделиться с врачом: ${if (profile.shareWithDoctor) "Да" else "Нет"}")
-            Text("Согласие: ${if (profile.consentAccepted) "Принято" else "Не принято"}")
+            Text("Поделиться с врачом: ${if (profile.shareWithDoctor) "Да" else "Нет"}", color = GlassTextSecondary)
+            Text("Согласие: ${if (profile.consentAccepted) "Принято" else "Не принято"}", color = GlassTextSecondary)
             if (profile.consentAccepted) {
-                Text("Версия: ${profile.consentVersion}")
-                Text("Дата: ${profile.consentTimestamp?.toString() ?: "—"}")
+                Text("Версия: ${profile.consentVersion}", color = GlassTextSecondary)
+                Text("Дата: ${profile.consentTimestamp?.toString() ?: "—"}", color = GlassTextSecondary)
             }
         }
     }

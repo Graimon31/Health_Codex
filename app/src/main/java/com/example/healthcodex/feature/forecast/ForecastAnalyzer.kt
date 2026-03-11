@@ -39,6 +39,8 @@ object ForecastAnalyzer {
         val age = profile.birthDate?.let { Validation.calculateAge(it) }
         val bmiValue = calculateBmiValue(profile.heightCm, profile.weightKg)
 
+        val heuristicRisk = estimateRiskScore(age, bmiValue, profile)
+
         age?.let {
             when {
                 it < 45 -> positive += WellnessInsight(
@@ -156,27 +158,18 @@ object ForecastAnalyzer {
             )
         }
 
-        val riskScore = risks.fold(initial = 0) { acc, insight ->
-            val score = when (insight.severity) {
-                InsightSeverity.POSITIVE -> 0
-                InsightSeverity.WARNING -> 1
-                InsightSeverity.CRITICAL -> 2
-            }
-            acc + score
-        }
-
         val headline = when {
-            riskScore >= 5 -> "Прогноз требует немедленного внимания"
-            riskScore in 3..4 -> "Прогноз настораживает"
-            riskScore in 1..2 -> "Умеренный прогноз"
+            heuristicRisk >= 0.75 -> "Прогноз требует немедленного внимания"
+            heuristicRisk >= 0.55 -> "Прогноз настораживает"
+            heuristicRisk >= 0.35 -> "Умеренный прогноз"
             else -> "Прогноз благоприятный"
         }
 
         val detail = when {
-            riskScore >= 5 -> "Несколько факторов риска усиливают вероятность ухудшения состояния в ближайшие месяцы."
-            riskScore in 3..4 -> "Часть показателей выходит за рамки нормы — стоит пересмотреть образ жизни и план лечения."
-            riskScore in 1..2 -> "Отдельные показатели требуют контроля, но серьёзных угроз не выявлено."
-            else -> "Показатели в норме, сохраняйте текущий образ жизни и наблюдение."
+            heuristicRisk >= 0.75 -> "Комплекс показателей указывает на высокий риск, обсудите план действий с врачом."
+            heuristicRisk >= 0.55 -> "Часть показателей выходит за рамки нормы — скорректируйте образ жизни и наблюдайтесь чаще."
+            heuristicRisk >= 0.35 -> "Есть факторы, требующие контроля, следуйте рекомендациям и отслеживайте динамику."
+            else -> "Показатели в норме, сохраняйте текущий образ жизни и контроль ключевых метрик."
         }
 
         if (recommendations.isEmpty()) {
@@ -189,8 +182,57 @@ object ForecastAnalyzer {
             positiveInsights = positive.sortedBy { it.title },
             riskInsights = risks.sortedByDescending { it.severity.ordinal },
             recommendations = recommendations.distinct(),
-            profileMissing = false
+            profileMissing = false,
+            riskProbability = heuristicRisk,
+            usedTflite = false
         )
+    }
+
+    private fun estimateRiskScore(age: Int?, bmi: Double?, profile: UserProfile): Double {
+        var score = 0.25
+        age?.let {
+            score += when {
+                it >= 75 -> 0.25
+                it >= 60 -> 0.18
+                it >= 45 -> 0.12
+                else -> 0.05
+            }
+        }
+        bmi?.let {
+            score += when {
+                it >= BMI_OVERWEIGHT -> 0.2
+                it > BMI_NORMAL_HIGH -> 0.1
+                it < BMI_NORMAL_LOW -> 0.08
+                else -> 0.0
+            }
+        }
+        profile.bpBaselineSystolic?.let { sys ->
+            profile.bpBaselineDiastolic?.let { dia ->
+                score += when {
+                    sys >= 140 || dia >= 90 -> 0.22
+                    sys in 130..139 || dia in 85..89 -> 0.12
+                    sys in 120..129 || dia in 80..84 -> 0.08
+                    else -> 0.0
+                }
+            }
+        }
+        profile.restingHr?.let { hr ->
+            score += when {
+                hr >= 95 || hr <= 48 -> 0.12
+                hr in 85..94 || hr in 49..55 -> 0.08
+                else -> 0.0
+            }
+        }
+        if (profile.conditions.isNotEmpty()) {
+            score += 0.12
+        }
+        if (profile.medications.isNotEmpty()) {
+            score += 0.05
+        }
+        if (profile.shareWithDoctor) {
+            score -= 0.05
+        }
+        return score.coerceIn(0.0, 1.0)
     }
 
     private fun calculateBmiValue(heightCm: Int?, weightKg: Float?): Double? {
@@ -243,3 +285,4 @@ object ForecastAnalyzer {
         }
     }
 }
+

@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.healthcodex.data.measurements.MeasurementConfidence
 import com.example.healthcodex.data.measurements.MeasurementDetails
+import com.example.healthcodex.data.measurements.MeasurementDeviceType
 import com.example.healthcodex.data.measurements.MeasurementSource
 import com.example.healthcodex.data.measurements.MeasurementType
 import java.time.Instant
@@ -19,6 +20,8 @@ data class MeasurementEntity(
     val timestamp: Instant,
     val startTimestamp: Instant? = null,
     val source: MeasurementSource,
+    val deviceId: Long? = null,
+    val deviceType: MeasurementDeviceType? = null,
     val deviceName: String? = null,
     val deviceAddress: String? = null,
     val note: String? = null,

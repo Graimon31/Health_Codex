@@ -21,6 +21,7 @@ class ForecastViewModel(application: Application) : AndroidViewModel(application
 
     private val repository = (application as? HealthCodexApp)?.profileRepository
         ?: ProfileRepository(application.applicationContext)
+    private val neuralAnalyzer = NeuralForecastAnalyzer(application.applicationContext)
 
     private val _state = MutableStateFlow(ForecastViewState())
     val state: StateFlow<ForecastViewState> = _state.asStateFlow()
@@ -32,9 +33,15 @@ class ForecastViewModel(application: Application) : AndroidViewModel(application
     private fun observeForecast() {
         viewModelScope.launch {
             repository.profileFlow.collectLatest { profile ->
+                val heuristic = ForecastAnalyzer.analyze(profile)
+                val neuralProbability = profile?.let { neuralAnalyzer.analyze(it) }
+                val mergedForecast = heuristic.copy(
+                    riskProbability = neuralProbability ?: heuristic.riskProbability,
+                    usedTflite = neuralProbability != null
+                )
                 _state.value = ForecastViewState(
                     isLoading = false,
-                    forecast = ForecastAnalyzer.analyze(profile)
+                    forecast = mergedForecast
                 )
             }
         }

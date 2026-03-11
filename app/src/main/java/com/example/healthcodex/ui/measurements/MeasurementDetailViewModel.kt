@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.healthcodex.HealthCodexApp
 import com.example.healthcodex.data.measurements.MeasurementEntry
 import com.example.healthcodex.data.measurements.MeasurementsRepository
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,10 +37,16 @@ class MeasurementDetailViewModel(
                 if (current != null) {
                     val dayEntries = entries.filter { it.localDate() == current.localDate() }
                         .sortedByDescending { it.timestamp }
+                    val since7Days = Instant.now().minus(6, ChronoUnit.DAYS)
+                        .truncatedTo(ChronoUnit.DAYS)
+                    val typeHistory = entries
+                        .filter { it.type == current.type && !it.timestamp.isBefore(since7Days) }
+                        .sortedBy { it.timestamp }
                     _state.value = MeasurementDetailState(
                         isLoading = false,
                         entry = current,
-                        dayEntries = dayEntries
+                        dayEntries = dayEntries,
+                        typeHistory = typeHistory
                     )
                 } else {
                     _state.value = MeasurementDetailState(isLoading = false, entry = null, dayEntries = emptyList())
@@ -65,5 +73,7 @@ class MeasurementDetailViewModel(
 data class MeasurementDetailState(
     val isLoading: Boolean = true,
     val entry: MeasurementEntry? = null,
-    val dayEntries: List<MeasurementEntry> = emptyList()
+    val dayEntries: List<MeasurementEntry> = emptyList(),
+    /** Same-type entries for the last 7 days, sorted ascending — used for charts. */
+    val typeHistory: List<MeasurementEntry> = emptyList()
 )
