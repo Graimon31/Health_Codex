@@ -145,17 +145,17 @@ fun LoginScreen(
                     enabled = !state.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlassHighlight.copy(alpha = 0.8f)
+                        containerColor = Color.White
                     )
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
-                            color = GlassTextPrimary
+                            color = Color.Black
                         )
                     } else {
-                        Text("Войти", color = GlassTextPrimary)
+                        Text("Войти", color = Color.Black)
                     }
                 }
             }
