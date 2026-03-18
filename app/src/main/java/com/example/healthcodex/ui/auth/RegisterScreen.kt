@@ -206,7 +206,7 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Уже есть аккаунт? Войти",
-            color = GlassHighlight,
+            color = Color.White,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.clickable { onNavigateToLogin() }
         )

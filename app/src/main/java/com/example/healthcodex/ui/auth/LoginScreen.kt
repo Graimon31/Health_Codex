@@ -178,7 +178,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Нет аккаунта? Зарегистрироваться",
-            color = GlassHighlight,
+            color = Color.White,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.clickable { onNavigateToRegister() }
         )
