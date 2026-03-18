@@ -30,6 +30,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.healthcodex.R
 import com.example.healthcodex.feature.forecast.ForecastRoute
+import com.example.healthcodex.ui.auth.LoginScreen
 import com.example.healthcodex.ui.measurements.MeasurementsNav
 import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNav
@@ -39,6 +40,8 @@ import com.example.healthcodex.ui.theme.GlassBottomBar
 import com.example.healthcodex.ui.theme.LiquidGlassBackdrop
 import com.example.healthcodex.ui.theme.HealthCodexTheme
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.map
 
 /**
  * Main activity that hosts the application navigation graph.
@@ -63,6 +66,11 @@ private fun AppScaffold() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val view = LocalView.current
+
+    val app = view.context.applicationContext as HealthCodexApp
+    val hasToken by app.prefsRepository.authToken
+        .map { !it.isNullOrBlank() }
+        .collectAsState(initial = false)
 
     // Always use dark icons=false for the cosmic dark background
     SideEffect {
@@ -95,42 +103,55 @@ private fun AppScaffold() {
         )
     )
 
+    val isOnLogin = currentRoute == "login"
+
     // Wrap everything in the cosmic gradient backdrop
     LiquidGlassBackdrop {
         Scaffold(
             contentWindowInsets = WindowInsets(0),
             containerColor = Color.Transparent,
             bottomBar = {
-                GlassBottomBar(
-                    items = items,
-                    currentRoute = currentRoute,
-                    onItemSelected = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                if (!isOnLogin) {
+                    GlassBottomBar(
+                        items = items,
+                        currentRoute = currentRoute,
+                        onItemSelected = { route ->
+                            navController.navigate(route) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        },
+                        isSelected = { item ->
+                            when (item.route) {
+                                "forecast" -> currentRoute == item.route
+                                measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
+                                profileStart -> currentRoute?.startsWith("profile") == true
+                                else -> currentRoute == item.route
                             }
                         }
-                    },
-                    isSelected = { item ->
-                        when (item.route) {
-                            "forecast" -> currentRoute == item.route
-                            measurementHome -> currentRoute?.startsWith(MeasurementsNav.home) == true
-                            profileStart -> currentRoute?.startsWith("profile") == true
-                            else -> currentRoute == item.route
-                        }
-                    }
-                )
+                    )
+                }
             }
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = "forecast",
+                startDestination = if (hasToken) "forecast" else "login",
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
+                composable("login") {
+                    LoginScreen(
+                        onLoginSuccess = {
+                            navController.navigate("forecast") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable("forecast") {
                     ForecastRoute(
                         paddingValues = innerPadding,

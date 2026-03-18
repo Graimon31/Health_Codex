@@ -89,6 +89,12 @@ dependencies {
     // On-device neural forecast inference
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
 
+    // Networking – Retrofit + OkHttp + Moshi converter
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

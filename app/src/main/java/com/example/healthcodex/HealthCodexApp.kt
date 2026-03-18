@@ -4,8 +4,12 @@ package com.example.healthcodex
 import android.app.Application
 import com.example.healthcodex.data.db.AppDatabase
 import com.example.healthcodex.data.measurements.MeasurementsRepository
+import com.example.healthcodex.data.network.ApiClient
+import com.example.healthcodex.data.network.AuthRepository
+import com.example.healthcodex.data.network.TokenProvider
 import com.example.healthcodex.data.prefs.PrefsRepository
 import com.example.healthcodex.data.profile.ProfileRepository
+import kotlinx.coroutines.flow.first
 
 /**
  * Application entry point exposing lazy singletons for repositories and
@@ -22,5 +26,13 @@ class HealthCodexApp : Application() {
             database.measurementDao(),
             database.connectedDeviceDao()
         )
+    }
+
+    val apiClient: ApiClient by lazy {
+        ApiClient(TokenProvider { prefsRepository.authToken.first() })
+    }
+
+    val authRepository: AuthRepository by lazy {
+        AuthRepository(prefsRepository, apiClient)
     }
 }
