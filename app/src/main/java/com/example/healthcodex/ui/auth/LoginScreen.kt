@@ -89,7 +89,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             color = GlassTextPrimary
         )
         Text(
-            text = "Вход в аккаунт врача",
+            text = "Вход в личный кабинет",
             style = MaterialTheme.typography.bodyMedium,
             color = GlassTextSecondary
         )
