@@ -106,6 +106,20 @@ fun RegisterScreen(
         LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 OutlinedTextField(
+                    value = state.serverUrl,
+                    onValueChange = viewModel::updateServerUrl,
+                    label = { Text("Адрес сервера") },
+                    placeholder = { Text("http://192.168.0.1:8000", color = GlassTextSecondary.copy(alpha = 0.4f)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Next
+                    ),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
                     value = state.fullName,
                     onValueChange = viewModel::updateFullName,
                     label = { Text("Полное имя") },
