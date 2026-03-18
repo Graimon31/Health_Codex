@@ -1,6 +1,7 @@
 package com.example.healthcodex.ui.auth
 
 import android.app.Application
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -40,24 +43,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.clickable
 import com.example.healthcodex.ui.theme.GlassHighlight
 import com.example.healthcodex.ui.theme.GlassTextPrimary
 import com.example.healthcodex.ui.theme.GlassTextSecondary
 import com.example.healthcodex.ui.theme.LiquidGlassSurface
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit = {}
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val viewModel: LoginViewModel = viewModel(factory = LoginViewModel.factory(application))
+    val viewModel: RegisterViewModel = viewModel(factory = RegisterViewModel.factory(application))
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    if (state.isLoggedIn) {
-        onLoginSuccess()
+    if (state.isRegistered) {
+        onRegisterSuccess()
         return
     }
 
@@ -76,12 +78,13 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.Default.Lock,
+            imageVector = Icons.Default.PersonAdd,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
             tint = GlassHighlight
@@ -93,7 +96,7 @@ fun LoginScreen(
             color = GlassTextPrimary
         )
         Text(
-            text = "Вход в личный кабинет",
+            text = "Регистрация пациента",
             style = MaterialTheme.typography.bodyMedium,
             color = GlassTextSecondary
         )
@@ -101,6 +104,16 @@ fun LoginScreen(
 
         LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
+                OutlinedTextField(
+                    value = state.fullName,
+                    onValueChange = viewModel::updateFullName,
+                    label = { Text("Полное имя") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = viewModel::updateEmail,
@@ -126,22 +139,37 @@ fun LoginScreen(
                             Icon(
                                 if (passwordVisible) Icons.Default.VisibilityOff
                                 else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Скрыть пароль" else "Показать пароль",
+                                contentDescription = if (passwordVisible) "Скрыть" else "Показать",
                                 tint = GlassTextSecondary
                             )
                         }
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.passwordConfirm,
+                    onValueChange = viewModel::updatePasswordConfirm,
+                    label = { Text("Подтвердите пароль") },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None
+                        else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
-                    keyboardActions = KeyboardActions(onDone = { viewModel.login() }),
+                    keyboardActions = KeyboardActions(onDone = { viewModel.register() }),
                     colors = fieldColors,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 Button(
-                    onClick = viewModel::login,
+                    onClick = viewModel::register,
                     enabled = !state.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -155,7 +183,7 @@ fun LoginScreen(
                             color = GlassTextPrimary
                         )
                     } else {
-                        Text("Войти", color = GlassTextPrimary)
+                        Text("Зарегистрироваться", color = GlassTextPrimary)
                     }
                 }
             }
@@ -176,10 +204,10 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Нет аккаунта? Зарегистрироваться",
+            text = "Уже есть аккаунт? Войти",
             color = GlassHighlight,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.clickable { onNavigateToRegister() }
+            modifier = Modifier.clickable { onNavigateToLogin() }
         )
     }
 }

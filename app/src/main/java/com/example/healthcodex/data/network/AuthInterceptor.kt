@@ -15,8 +15,8 @@ class AuthInterceptor(private val tokenProvider: TokenProvider) : Interceptor {
         val original = chain.request()
         val path = original.url.encodedPath
 
-        // Skip auth header for login/refresh/health endpoints
-        if (path.endsWith("/login") || path.endsWith("/refresh") || path.endsWith("/health")) {
+        // Skip auth header for login/refresh/register/health endpoints
+        if (path.endsWith("/login") || path.endsWith("/refresh") || path.endsWith("/register") || path.endsWith("/health")) {
             return chain.proceed(original)
         }
 

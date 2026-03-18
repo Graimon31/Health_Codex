@@ -19,12 +19,14 @@ class HealthCodexApp : Application() {
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
     val prefsRepository: PrefsRepository by lazy { PrefsRepository(this) }
     val profileRepository: ProfileRepository by lazy {
-        ProfileRepository(database.userProfileDao(), prefsRepository)
+        ProfileRepository(database.userProfileDao(), prefsRepository, apiClient)
     }
     val measurementsRepository: MeasurementsRepository by lazy {
         MeasurementsRepository(
             database.measurementDao(),
-            database.connectedDeviceDao()
+            database.connectedDeviceDao(),
+            apiClient,
+            prefsRepository
         )
     }
 

@@ -13,6 +13,9 @@ interface AuthApi {
     @POST("api/v1/auth/refresh")
     suspend fun refresh(@Body request: RefreshRequest): Response<RefreshResponse>
 
+    @POST("api/v1/auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
+
     @GET("api/v1/health")
     suspend fun healthCheck(): Response<HealthCheckResponse>
 }

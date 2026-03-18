@@ -166,6 +166,26 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun linkDoctor(code: String) {
+        viewModelScope.launch {
+            _effects.value = ProfileEvent.DoctorLinking
+            repository.linkDoctor(code).fold(
+                onSuccess = { doctorName ->
+                    _effects.value = ProfileEvent.DoctorLinked(doctorName)
+                },
+                onFailure = { error ->
+                    _effects.value = ProfileEvent.DoctorLinkError(error.message ?: "Ошибка привязки")
+                }
+            )
+        }
+    }
+
+    fun fetchProfileFromServer() {
+        viewModelScope.launch {
+            repository.fetchProfileFromServer()
+        }
+    }
+
     fun setDemoMode(enabled: Boolean) {
         viewModelScope.launch { repository.setDemoMode(enabled) }
     }
@@ -249,6 +269,9 @@ data class ProfileSecurityState(
 
 sealed class ProfileEvent {
     data object ProfileSaved : ProfileEvent()
+    data object DoctorLinking : ProfileEvent()
+    data class DoctorLinked(val doctorName: String) : ProfileEvent()
+    data class DoctorLinkError(val message: String) : ProfileEvent()
 }
 
 data class ProfileForm(

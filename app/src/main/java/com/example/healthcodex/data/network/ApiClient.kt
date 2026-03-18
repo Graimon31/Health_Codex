@@ -53,4 +53,8 @@ class ApiClient(private val tokenProvider: TokenProvider) {
     }
 
     fun authApi(baseUrl: String): AuthApi = rebuild(baseUrl).create(AuthApi::class.java)
+
+    fun patientApi(baseUrl: String): PatientApi = rebuild(baseUrl).create(PatientApi::class.java)
+
+    fun measurementsApi(baseUrl: String): MeasurementsApi = rebuild(baseUrl).create(MeasurementsApi::class.java)
 }

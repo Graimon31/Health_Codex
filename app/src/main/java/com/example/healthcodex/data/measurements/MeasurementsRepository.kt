@@ -2,19 +2,26 @@
 package com.example.healthcodex.data.measurements
 
 import android.content.Context
+import android.util.Log
 import com.example.healthcodex.data.db.AppDatabase
 import com.example.healthcodex.data.db.ConnectedDeviceDao
 import com.example.healthcodex.data.db.ConnectedDeviceEntity
 import com.example.healthcodex.data.db.MeasurementDao
 import com.example.healthcodex.data.db.MeasurementEntity
 import com.example.healthcodex.data.measurements.DeviceConnectionStatus
+import com.example.healthcodex.data.network.ApiClient
+import com.example.healthcodex.data.network.MeasurementRequest
+import com.example.healthcodex.data.prefs.PrefsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 /**
  * Repository orchestrating measurement persistence and mapping.
@@ -22,11 +29,15 @@ import java.time.Instant
 class MeasurementsRepository(
     private val dao: MeasurementDao,
     private val connectedDeviceDao: ConnectedDeviceDao,
+    private val apiClient: ApiClient? = null,
+    private val prefs: PrefsRepository? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     constructor(context: Context, ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : this(
         AppDatabase.getInstance(context).measurementDao(),
         AppDatabase.getInstance(context).connectedDeviceDao(),
+        null,
+        null,
         ioDispatcher
     )
 
@@ -46,6 +57,60 @@ class MeasurementsRepository(
         } else {
             dao.update(entry.toEntity())
         }
+        // Fire-and-forget sync to server
+        if (apiClient != null && prefs != null) {
+            try {
+                pushToServer(entry)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to sync measurement to server: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun pushToServer(entry: MeasurementEntry) {
+        val url = prefs?.baseUrl?.first() ?: return
+        val token = prefs.authToken.first() ?: return
+        if (url.isBlank() || token.isBlank()) return
+
+        val api = apiClient?.measurementsApi(url) ?: return
+        val request = MeasurementRequest(
+            type = mapTypeToServer(entry.type),
+            valuePrimary = entry.details.primaryValue ?: 0.0,
+            valueSecondary = entry.details.secondaryValue,
+            unit = mapTypeToUnit(entry.type),
+            measuredAt = DateTimeFormatter.ISO_INSTANT.format(entry.timestamp),
+            source = entry.source.name,
+            deviceName = entry.deviceName,
+            note = entry.note
+        )
+        val response = api.createMeasurement(request)
+        if (response.isSuccessful) {
+            Log.d(TAG, "Measurement synced to server: ${response.body()?.id}")
+        } else {
+            Log.w(TAG, "Server rejected measurement: ${response.code()}")
+        }
+    }
+
+    private fun mapTypeToServer(type: MeasurementType): String = when (type) {
+        MeasurementType.HEART_RATE -> "PULSE"
+        MeasurementType.BLOOD_PRESSURE -> "BLOOD_PRESSURE"
+        MeasurementType.WEIGHT -> "WEIGHT"
+        MeasurementType.OXYGEN -> "SPO2"
+        MeasurementType.STEPS -> "STEPS"
+        MeasurementType.CALORIES -> "CALORIES"
+        MeasurementType.SLEEP -> "SLEEP"
+        MeasurementType.RESPIRATORY -> "RESPIRATORY"
+    }
+
+    private fun mapTypeToUnit(type: MeasurementType): String = when (type) {
+        MeasurementType.HEART_RATE -> "bpm"
+        MeasurementType.BLOOD_PRESSURE -> "mmHg"
+        MeasurementType.WEIGHT -> "kg"
+        MeasurementType.OXYGEN -> "%"
+        MeasurementType.STEPS -> "steps"
+        MeasurementType.CALORIES -> "kcal"
+        MeasurementType.SLEEP -> "hours"
+        MeasurementType.RESPIRATORY -> "breaths/min"
     }
 
     suspend fun delete(entry: MeasurementEntry) = withContext(ioDispatcher) {
@@ -131,4 +196,8 @@ class MeasurementsRepository(
         status = status,
         lastSync = lastSync
     )
+
+    companion object {
+        private const val TAG = "MeasurementsRepository"
+    }
 }

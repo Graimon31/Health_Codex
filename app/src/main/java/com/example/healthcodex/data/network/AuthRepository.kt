@@ -27,6 +27,31 @@ class AuthRepository(
         data class Error(val message: String) : AuthResult()
     }
 
+    suspend fun register(email: String, password: String, fullName: String): AuthResult {
+        val url = prefs.baseUrl.first()
+        if (url.isNullOrBlank()) {
+            return AuthResult.Error("Адрес сервера не задан. Укажите его в настройках безопасности.")
+        }
+        return try {
+            val api = apiClient.authApi(url)
+            val response = api.register(RegisterRequest(email = email, password = password, fullName = fullName))
+            if (response.isSuccessful) {
+                val body = response.body()!!
+                prefs.setAuthToken(body.accessToken)
+                prefs.setRefreshToken(body.refreshToken)
+                prefs.setLoggedInUserName(body.user.fullName)
+                AuthResult.Success(body.user)
+            } else {
+                val detail = response.errorBody()?.string()?.let { raw ->
+                    try { errorAdapter.fromJson(raw)?.detail } catch (_: Exception) { null }
+                }
+                AuthResult.Error(detail ?: "Ошибка регистрации (${response.code()})")
+            }
+        } catch (e: Exception) {
+            AuthResult.Error("Нет связи с сервером: ${e.localizedMessage}")
+        }
+    }
+
     suspend fun login(email: String, password: String): AuthResult {
         val url = prefs.baseUrl.first()
         if (url.isNullOrBlank()) {

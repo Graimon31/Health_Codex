@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.healthcodex.R
 import com.example.healthcodex.feature.forecast.ForecastRoute
 import com.example.healthcodex.ui.auth.LoginScreen
+import com.example.healthcodex.ui.auth.RegisterScreen
 import com.example.healthcodex.ui.measurements.MeasurementsNav
 import com.example.healthcodex.ui.measurements.measurementsNavGraph
 import com.example.healthcodex.ui.profile.ProfileNav
@@ -103,7 +104,7 @@ private fun AppScaffold() {
         )
     )
 
-    val isOnLogin = currentRoute == "login"
+    val isOnLogin = currentRoute == "login" || currentRoute == "register"
 
     // Wrap everything in the cosmic gradient backdrop
     LiquidGlassBackdrop {
@@ -149,6 +150,21 @@ private fun AppScaffold() {
                             navController.navigate("forecast") {
                                 popUpTo("login") { inclusive = true }
                             }
+                        },
+                        onNavigateToRegister = {
+                            navController.navigate("register")
+                        }
+                    )
+                }
+                composable("register") {
+                    RegisterScreen(
+                        onRegisterSuccess = {
+                            navController.navigate("forecast") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        },
+                        onNavigateToLogin = {
+                            navController.popBackStack()
                         }
                     )
                 }

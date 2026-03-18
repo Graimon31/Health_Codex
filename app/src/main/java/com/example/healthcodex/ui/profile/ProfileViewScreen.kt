@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,13 +20,17 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Share
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.healthcodex.feature.profile.ProfileExportImport
 import com.example.healthcodex.ui.theme.GlassButton
+import com.example.healthcodex.ui.theme.GlassHighlight
 import com.example.healthcodex.ui.theme.GlassOutlinedButton
 import com.example.healthcodex.ui.theme.GlassTextPrimary
 import com.example.healthcodex.ui.theme.GlassTextSecondary
@@ -69,10 +75,26 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(effect) {
-        if (effect is ProfileEvent.ProfileSaved) {
-            snackbarHostState.showSnackbar("Профиль сохранён")
-            viewModel.clearEffects()
+        when (effect) {
+            is ProfileEvent.ProfileSaved -> {
+                snackbarHostState.showSnackbar("Профиль сохранён")
+                viewModel.clearEffects()
+            }
+            is ProfileEvent.DoctorLinked -> {
+                snackbarHostState.showSnackbar("Врач привязан: ${(effect as ProfileEvent.DoctorLinked).doctorName}")
+                viewModel.clearEffects()
+            }
+            is ProfileEvent.DoctorLinkError -> {
+                snackbarHostState.showSnackbar((effect as ProfileEvent.DoctorLinkError).message)
+                viewModel.clearEffects()
+            }
+            else -> {}
         }
+    }
+
+    // Fetch profile from server on first load
+    LaunchedEffect(Unit) {
+        viewModel.fetchProfileFromServer()
     }
 
     val profile = state.profile
@@ -117,6 +139,12 @@ fun ProfileViewRoute(navController: NavController, paddingValues: PaddingValues)
                 BaselineCard(profile)
                 Spacer(modifier = Modifier.height(12.dp))
                 ContactsCard(profile)
+                Spacer(modifier = Modifier.height(12.dp))
+                DoctorLinkCard(
+                    doctorName = profile.doctorName,
+                    isLinking = effect is ProfileEvent.DoctorLinking,
+                    onLink = { code -> viewModel.linkDoctor(code) }
+                )
                 Spacer(modifier = Modifier.height(12.dp))
                 DeviceCard(profile, onChange = { showBleDialog = true })
                 Spacer(modifier = Modifier.height(12.dp))
@@ -336,6 +364,73 @@ private fun PrivacyCard(profile: com.example.healthcodex.data.profile.UserProfil
             if (profile.consentAccepted) {
                 Text("Версия: ${profile.consentVersion}", color = GlassTextSecondary)
                 Text("Дата: ${profile.consentTimestamp?.toString() ?: "—"}", color = GlassTextSecondary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DoctorLinkCard(
+    doctorName: String?,
+    isLinking: Boolean,
+    onLink: (String) -> Unit
+) {
+    var doctorCode by remember { mutableStateOf("") }
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = GlassTextPrimary,
+        unfocusedTextColor = GlassTextPrimary,
+        focusedBorderColor = GlassHighlight,
+        unfocusedBorderColor = GlassTextSecondary.copy(alpha = 0.5f),
+        cursorColor = GlassHighlight,
+        focusedLabelColor = GlassHighlight,
+        unfocusedLabelColor = GlassTextSecondary
+    )
+
+    LiquidGlassSurface(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Лечащий врач",
+                style = MaterialTheme.typography.titleMedium,
+                color = GlassTextPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (!doctorName.isNullOrBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MedicalServices, contentDescription = null, tint = GlassHighlight)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(doctorName, color = GlassTextPrimary, fontWeight = FontWeight.Medium)
+                }
+            } else {
+                Text("Врач не привязан", color = GlassTextSecondary)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = doctorCode,
+                    onValueChange = { doctorCode = it.uppercase().take(6) },
+                    label = { Text("Код врача") },
+                    singleLine = true,
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                GlassButton(
+                    onClick = {
+                        if (doctorCode.isNotBlank()) onLink(doctorCode)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isLinking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(Icons.Default.Link, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Привязать врача", color = Color.White)
+                    }
+                }
             }
         }
     }
